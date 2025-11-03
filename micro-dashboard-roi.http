@@ -1,0 +1,6 @@
+@micro_dashboard_roi_HostAddress = http://localhost:5078
+
+GET {{micro_dashboard_roi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
