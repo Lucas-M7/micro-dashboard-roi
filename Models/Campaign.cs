@@ -11,6 +11,5 @@ public class Campaign
 
     [StringLength(100, ErrorMessage = "O nome do produto deve conter no máximo 100 caractéres.")]
     public string Product { get; set; } = string.Empty;
-
     public ICollection<DailyLog> Logs { get; set; } = new List<DailyLog>();
 }
