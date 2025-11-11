@@ -110,4 +110,29 @@ public class CampaignsController : ControllerBase
 
         return Ok(logdDto);
     }
+
+    [HttpGet("{id}/logs")]
+    public async Task<IActionResult> GetAllLogsOneCampaign(int id)
+    {
+        var campaignExists = await _context.Campaigns.AnyAsync(c => c.Id == id);
+        if (!campaignExists)
+        {
+            return NotFound();
+        }
+
+        var logsFromDb = await _context.DailyLogs
+                                    .Where(l => l.CampaignId == id)
+                                    .ToListAsync();
+
+        var logsDto = logsFromDb.Select(log => new DailyLogDTO
+        {
+            Id = log.Id,
+            Date = log.Date,
+            Spend = log.Spend,
+            Revenue = log.Revenue,
+            CampaignId = log.CampaignId
+        }).ToList();
+
+        return Ok(logsDto);
+    }
 }
