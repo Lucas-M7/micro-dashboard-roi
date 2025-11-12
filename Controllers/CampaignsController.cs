@@ -3,7 +3,6 @@ using micro_dashboard_roi.DTOs;
 using micro_dashboard_roi.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 
 namespace micro_dashboard_roi.Controllers;
 
