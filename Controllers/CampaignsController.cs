@@ -134,4 +134,49 @@ public class CampaignsController : ControllerBase
 
         return Ok(logsDto);
     }
+
+    [HttpGet("{id}/stats")]
+    public async Task<IActionResult> GetOneCampaignStats(int id)
+    {
+        var campaign = await _context.Campaigns
+                                        .Include(c => c.Logs)
+                                        .FirstOrDefaultAsync(c => c.Id == id);
+        if (campaign ==  null)
+        {
+            return NotFound();
+        }
+
+        decimal totalSpend = 0;
+        decimal totalRevenue = 0;
+
+        foreach (var log in campaign.Logs)
+        {
+            totalSpend += log.Spend;
+            totalRevenue += log.Revenue;
+        }
+
+        decimal totalProfit = totalRevenue - totalSpend;
+        
+        decimal roas = 0;
+        decimal roi = 0;
+
+        if (totalSpend > 0)
+        {
+            roas = totalRevenue / totalSpend;
+            roi = totalProfit / totalSpend;
+        }
+
+        var statsDto = new CampaignStatsDto
+        {
+          CampaignId = campaign.Id,
+          Name = campaign.Name,
+          TotalSpend = totalSpend,
+          TotalRevenue = totalRevenue,
+          TotalProfit = totalProfit,
+          ROAS = roas,
+          ROI = roi,
+        };
+
+        return Ok(statsDto);
+    }
 }
