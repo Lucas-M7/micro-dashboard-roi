@@ -98,13 +98,12 @@ public class CampaignsController : ControllerBase
         _context.DailyLogs.Add(newLog);
         await _context.SaveChangesAsync();
 
-        var logdDto = new DailyLogDTO
+        var logdDto = new CreateDailyLogDTO
         {
             Id = newLog.Id,
             Date = newLog.Date,
             Spend = newLog.Spend,
-            Revenue = newLog.Revenue,
-            CampaignId = newLog.CampaignId
+            Revenue = newLog.Revenue
         };
 
         return Ok(logdDto);
