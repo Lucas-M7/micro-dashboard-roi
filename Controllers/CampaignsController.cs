@@ -1,8 +1,6 @@
-using micro_dashboard_roi.Data;
-using micro_dashboard_roi.DTOs;
 using micro_dashboard_roi.Models;
+using micro_dashboard_roi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace micro_dashboard_roi.Controllers;
 
@@ -10,18 +8,17 @@ namespace micro_dashboard_roi.Controllers;
 [Route("api/campaigns")]
 public class CampaignsController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly ICampaignService _campaignService;
 
-    public CampaignsController(AppDbContext context)
+    public CampaignsController(ICampaignService campaignService)
     {
-        _context = context;
+        _campaignService = campaignService;
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateCampaign([FromBody] Campaign newCampaign)
     {
-        _context.Campaigns.Add(newCampaign);
-        await _context.SaveChangesAsync();
+        await _campaignService.CreateCampaign(newCampaign);
 
         return CreatedAtAction(nameof(GetCampaignById), new { id = newCampaign.Id }, newCampaign);
     }
@@ -29,41 +26,20 @@ public class CampaignsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCampaignById(int id)
     {
-        var campaign = await _context.Campaigns
-                                    .Include(c => c.Logs)
-                                    .FirstOrDefaultAsync(c => c.Id == id);
+        var campaign = await _campaignService.GetCampaignById(id);
 
         if (campaign == null)
         {
             return NotFound();
         }
 
-        var campaignDto = new CampaignDto
-        {
-            Id = campaign.Id,
-            Name = campaign.Name,
-            Product = campaign.Product,
-        };
-
-        foreach (var log in campaign.Logs)
-        {
-            campaignDto.Logs.Add(new DailyLog
-            {
-                Id = log.Id,
-                Date = log.Date,
-                Spend = log.Spend,
-                Revenue = log.Revenue,
-                CampaignId = log.CampaignId
-            });
-        }
-
-        return Ok(campaignDto);
+        return Ok(campaign);
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAllCampaigns()
     {
-        var campaigns = await _context.Campaigns.ToListAsync();
+        var campaigns = await _campaignService.GetAllCampaigns();
 
         return Ok(campaigns);
     }
@@ -71,15 +47,7 @@ public class CampaignsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCampaignById(int id)
     {
-        var campaign = await _context.Campaigns.FindAsync(id);
-
-        if (campaign == null)
-        {
-            return NotFound();
-        }
-
-        _context.Remove(campaign);
-        await _context.SaveChangesAsync();
+        await _campaignService.DeleteCampaignById(id);
 
         return NoContent();
     }
@@ -87,95 +55,39 @@ public class CampaignsController : ControllerBase
     [HttpPost("{id}/logs")]
     public async Task<IActionResult> AddLogToCampaign(int id, [FromBody] DailyLog newLog)
     {
-        var campaign = await _context.Campaigns.FindAsync(id);
+        var campaign = await _campaignService.AddLogToCampaign(id, newLog);
+
         if (campaign is null)
         {
             return NotFound();
         }
 
-        newLog.CampaignId = id;
-
-        _context.DailyLogs.Add(newLog);
-        await _context.SaveChangesAsync();
-
-        var logdDto = new CreateDailyLogDTO
-        {
-            Id = newLog.Id,
-            Date = newLog.Date,
-            Spend = newLog.Spend,
-            Revenue = newLog.Revenue
-        };
-
-        return Ok(logdDto);
+        return Ok(campaign);
     }
 
     [HttpGet("{id}/logs")]
     public async Task<IActionResult> GetAllLogsOneCampaign(int id)
     {
-        var campaignExists = await _context.Campaigns.AnyAsync(c => c.Id == id);
-        if (!campaignExists)
+        var campaign = await _campaignService.GetLogsByCampaign(id);
+
+        if (campaign == null)
         {
             return NotFound();
         }
 
-        var logsFromDb = await _context.DailyLogs
-                                    .Where(l => l.CampaignId == id)
-                                    .ToListAsync();
-
-        var logsDto = logsFromDb.Select(log => new DailyLogDTO
-        {
-            Id = log.Id,
-            Date = log.Date,
-            Spend = log.Spend,
-            Revenue = log.Revenue,
-            CampaignId = log.CampaignId
-        }).ToList();
-
-        return Ok(logsDto);
+        return Ok(campaign);
     }
 
     [HttpGet("{id}/stats")]
     public async Task<IActionResult> GetOneCampaignStats(int id)
     {
-        var campaign = await _context.Campaigns
-                                        .Include(c => c.Logs)
-                                        .FirstOrDefaultAsync(c => c.Id == id);
-        if (campaign ==  null)
+        var campaign = await _campaignService.GetCampaignStats(id);
+
+        if (campaign is null)
         {
             return NotFound();
         }
 
-        decimal totalSpend = 0;
-        decimal totalRevenue = 0;
-
-        foreach (var log in campaign.Logs)
-        {
-            totalSpend += log.Spend;
-            totalRevenue += log.Revenue;
-        }
-
-        decimal totalProfit = totalRevenue - totalSpend;
-        
-        decimal roas = 0;
-        decimal roi = 0;
-
-        if (totalSpend > 0)
-        {
-            roas = totalRevenue / totalSpend;
-            roi = totalProfit / totalSpend;
-        }
-
-        var statsDto = new CampaignStatsDto
-        {
-          CampaignId = campaign.Id,
-          Name = campaign.Name,
-          TotalSpend = totalSpend,
-          TotalRevenue = totalRevenue,
-          TotalProfit = totalProfit,
-          ROAS = roas,
-          ROI = roi,
-        };
-
-        return Ok(statsDto);
+        return Ok(campaign);
     }
 }
