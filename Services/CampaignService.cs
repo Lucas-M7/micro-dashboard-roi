@@ -17,7 +17,12 @@ public class CampaignService : ICampaignService
 
     public async Task<CreateDailyLogDTO?> AddLogToCampaign(int campaignId, DailyLog dailyLog)
     {
-        var campaign = await _context.Campaigns.FindAsync(campaignId) ?? throw new NullReferenceException();
+        var campaign = await _context.Campaigns.FindAsync(campaignId);
+
+        if (campaign == null)
+        {
+            return null;
+        }
 
         dailyLog.CampaignId = campaignId;
 
@@ -69,8 +74,12 @@ public class CampaignService : ICampaignService
     {
         var campaign = await _context.Campaigns
                                     .Include(c => c.Logs)
-                                    .FirstOrDefaultAsync(c => c.Id == id)
-                                    ?? throw new NullReferenceException();
+                                    .FirstOrDefaultAsync(c => c.Id == id);
+
+        if(campaign == null)
+        {
+            return null;
+        }
 
         var campaignDto = new CampaignDto
         {
@@ -98,8 +107,12 @@ public class CampaignService : ICampaignService
     {
         var campaign = await _context.Campaigns
                                     .Include(c => c.Logs)
-                                    .FirstOrDefaultAsync(c => c.Id == campaignId)
-                                    ?? throw new NullReferenceException();
+                                    .FirstOrDefaultAsync(c => c.Id == campaignId);
+
+        if (campaign == null)
+        {
+            return null;
+        }
 
         decimal totalSpend = 0;
         decimal totalRevenue = 0;

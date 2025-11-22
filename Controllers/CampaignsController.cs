@@ -30,7 +30,7 @@ public class CampaignsController : ControllerBase
 
         if (campaign == null)
         {
-            return NotFound();
+            return NotFound("Não foi possível encontrar a campanha com este ID.");
         }
 
         return Ok(campaign);
@@ -47,7 +47,12 @@ public class CampaignsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCampaignById(int id)
     {
-        await _campaignService.DeleteCampaignById(id);
+       var deleted =  await _campaignService.DeleteCampaignById(id);
+
+       if(!deleted)
+        {
+            return NotFound("Não foi possível deletar. Campanha não encontrada.");
+        }
 
         return NoContent();
     }
@@ -59,7 +64,7 @@ public class CampaignsController : ControllerBase
 
         if (campaign is null)
         {
-            return NotFound();
+            return NotFound("NNão foi possível adicionar um registro a campanha com este ID. Campanha não encontrada.");
         }
 
         return Ok(campaign);
@@ -72,7 +77,7 @@ public class CampaignsController : ControllerBase
 
         if (campaign == null)
         {
-            return NotFound();
+            return NotFound("Campanha não encontrada.");
         }
 
         return Ok(campaign);
@@ -85,7 +90,7 @@ public class CampaignsController : ControllerBase
 
         if (campaign is null)
         {
-            return NotFound();
+            return NotFound("Campanha não encontrada.");
         }
 
         return Ok(campaign);
