@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
@@ -7,14 +7,18 @@
   </head>
 
   <body>
-    
-    <div class="d-flex" style="min-height: 100vh;">
-
-      <aside class="d-flex flex-column flex-shring-0 p-3 text-white bg-dark" style="width: 200px;">
-        <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+    <div class="d-flex" style="min-height: 100vh">
+      <aside
+        class="d-flex flex-column flex-shring-0 p-3 text-white bg-dark"
+        style="width: 200px"
+      >
+        <a
+          href="/"
+          class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none"
+        >
           <span class="fs-4 fw-bold">🚀 ROI Tracker</span>
         </a>
-        <hr>
+        <hr />
         <ul class="nav nav-pills flex-column mb-auto">
           <li class="nav-item">
             <a href="#" class="nav-link active" aria-current="page">
@@ -22,32 +26,205 @@
             </a>
           </li>
           <li>
-          <a href="#" class="nav-link text-white">
-            Campanhas
-          </a>
+            <a href="#" class="nav-link text-white"> Campanhas </a>
           </li>
         </ul>
-        <hr>
+        <hr />
         <div>
-          <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle me-2">
+          <img
+            src="https://github.com/mdo.png"
+            alt=""
+            width="32"
+            height="32"
+            class="rounded-circle me-2"
+          />
           <strong>Admin</strong>
         </div>
       </aside>
 
       <main class="flex-grow-1 p-4">
-
-        <div class="d=flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom border-secondary">
-          <h1 class="h2">Dashboard Geral</h1>
-        </div>
-
         <div class="row">
           <div class="col-md-12">
-            <p>O conteúdo vai aqui...</p>
+            <header class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom border-secondary">
+    <h1 class="h2 text-white">Dashboard Geral</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-outline-light">
+            🔄 Atualizar
+        </button>
+    </div>
+</header>
+
+<section class="row g-4 mb-4" aria-label="Métricas Principais">
+    
+    <div class="col-md-4">
+        <article class="card bg-dark text-white border-primary h-100 shadow-sm" style="border-left: 5px solid #0d6efd !important;">
+            <div class="card-body">
+                <h2 class="card-title text-uppercase" style="font-size: 0.8rem;">Total Investido</h2>
+                <p class="card-text fs-2 fw-bold text-primary mb-0">
+                    <data id="val-spend" value="0">R$ 0,00</data>
+                </p>
+                <small class="text-secondary"> <span class="text-danger">▼ 0%</span> desde ontem</small>
+            </div>
+        </article>
+    </div>
+
+    <div class="col-md-4">
+        <article class="card bg-dark text-white border-success h-100 shadow-sm" style="border-left: 5px solid #198754 !important;">
+            <div class="card-body">
+                <h2 class="card-title text-uppercase" style="font-size: 0.8rem;">Faturamento Total</h2>
+                <p class="card-text fs-2 fw-bold text-success mb-0">
+                    <data id="val-revenue" value="0">R$ 0,00</data>
+                </p>
+                <small class="text-secondary"> <span class="text-success">▲ 0%</span> desde ontem</small>
+            </div>
+        </article>
+    </div>
+
+    <div class="col-md-4">
+        <article class="card bg-dark text-white border-warning h-100 shadow-sm" style="border-left: 5px solid #ffc107 !important;">
+            <div class="card-body">
+                <h2 class="card-title text-uppercase" style="font-size: 0.8rem;">ROI Geral</h2>
+                <p class="card-text fs-2 fw-bold text-warning mb-0">
+                    <data id="val-roi" value="0">0%</data>
+                </p>
+                <small class="text-secondary">Meta: 150%</small>
+            </div>
+        </article>
+    </div>
+
+</section>
+
+<section class="row" aria-label="Lista de Campanhas">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+        <h3 class="h4 text-white">Campanhas Recentes</h3>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNovaCampanha">
+            + Nova Campanha
+        </button>
+    </div>
+
+    <div class="table-responsive bg-dark rounded shadow-sm p-3" style="border: 1px solid #2d2d44;">
+        <table class="table table-dark table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th scope="col" class="text-secondary text-uppercase fs-7">ID</th>
+                    <th scope="col" class="text-secondary text-uppercase fs-7">Nome</th>
+                    <th scope="col" class="text-secondary text-uppercase fs-7">Produto</th>
+                    <th scope="col" class="text-secondary text-uppercase fs-7 text-end">ROI</th>
+                    <th scope="col" class="text-secondary text-uppercase fs-7 text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-corpo">
+                <tr>
+                    <td><span>#1</span></td>
+                    <td class="fw-bold">Secaps Black - TikTok</td>
+                    <td>Secaps</td>
+                    <td class="text-end">
+                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                            + 150%
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-light me-2" title="Adicionar Log">
+                            📝
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" title="Ver Estatísticas">
+                            📊
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><span>#2</span></td>
+                    <td class="fw-bold">Maquininha Ton - Face Ads</td>
+                    <td>Ton T3</td>
+                    <td class="text-end">
+                        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">
+                            - 20%
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-light me-2" title="Adicionar Log">📝</button>
+                        <button class="btn btn-sm btn-outline-info" title="Ver Estatísticas">📊</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</section>
+            </div>
           </div>
         </div>
-
       </main>
     </div>
+
+    <div class="modal fade" id="modalNovaCampanha" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">🚀 Criar Nova Campanha</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formNovaCampanha">
+          <div class="mb-3">
+            <label for="campanhaNome" class="form-label">Nome da Campanha</label>
+            <input type="text" class="form-control bg-dark text-white border-secondary" id="campanhaNome" placeholder="Ex: Black Friday - Facebook" required>
+          </div>
+          <div class="mb-3">
+            <label for="campanhaProduto" class="form-label">Produto / Oferta</label>
+            <input type="text" class="form-control bg-dark text-white border-secondary" id="campanhaProduto" placeholder="Ex: Secaps Black" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnSalvarCampanha">Salvar Campanha</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalNovoLog" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-white border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">💰 Adicionar Dados Diários</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="logCampanhaId">
+        
+        <h6 class="text-muted mb-3">Campanha: <span id="logNomeCampanha" class="text-white">...</span></h6>
+
+        <form id="formNovoLog">
+          <div class="mb-3">
+            <label for="logData" class="form-label">Data</label>
+            <input type="date" class="form-control bg-dark text-white border-secondary" id="logData" required>
+          </div>
+          
+          <div class="row">
+            <div class="col-6 mb-3">
+              <label for="logGasto" class="form-label text-danger">Gasto (R$)</label>
+              <input type="number" step="0.01" class="form-control bg-dark text-white border-secondary" id="logGasto" placeholder="0,00" required>
+            </div>
+            <div class="col-6 mb-3">
+              <label for="logFaturamento" class="form-label text-success">Faturamento (R$)</label>
+              <input type="number" step="0.01" class="form-control bg-dark text-white border-secondary" id="logFaturamento" placeholder="0,00" required>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-secondary">
+        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="btnSalvarLog">Lançar Dados</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
 
     <script type="module" src="/src/main.js"></script>
   </body>
