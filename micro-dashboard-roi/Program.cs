@@ -18,8 +18,6 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<ICampaignService, CampaignService>();
 
-var app = builder.Build();
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
@@ -30,6 +28,8 @@ builder.Services.AddCors(options =>
              .AllowAnyMethod();    
     });
 });
+
+var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
