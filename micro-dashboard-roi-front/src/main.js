@@ -99,4 +99,16 @@ const popoverList = [...popoverTriggerList].map(
   (popoverTriggerEl) => new bootstrap.Popover(popoverTriggerEl)
 );
 
+tabelaCorpo.addEventListener('click', (evento) => {
+  const elementoClicado = evento.target;
+
+  const botaoLog = elementoClicado.closest('.btn-add-log');
+
+  if (botaoLog) {
+    const idCampanha = botaoLog.dataset.id;
+
+    alert(`Bora trabalhar no Log da Campanha ID: ${idCampanha}`);
+  }
+});
+
 carregarDados();
