@@ -223,8 +223,30 @@
   </div>
 </div>
 
-<script type="module" src="/src/main.js"></script>
-</body>
+<div class="modal fade" id="modalLogCampanha" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Novo Log</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="idCampanhaLog">
+        
+        <p>Adicionando registro para a campanha <strong id="spanIdVisual">...</strong></p>
+        
+        <div class="mb-3">
+          <label for="txtLog" class="form-label">Descrição do evento:</label>
+          <textarea class="form-control" id="txtLog" rows="3" placeholder="Ex: Pausei a campanha pois o orçamento acabou..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnSalvarLog">Salvar Log</button>
+      </div>
+    </div>
+  </div>
+</div>
 
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -11,6 +11,10 @@ const btnSalvarCampanha = document.getElementById("btnSalvarCampanha");
 const inputNome = document.getElementById("campanhaNome");
 const inputProduto = document.getElementById("campanhaProduto");
 
+const modalLogCampanha = new bootstrap.Modal(
+  document.getElementById("modalLogCampanha")
+);
+
 const modalNovaCampanha = new bootstrap.Modal(
   document.getElementById("modalNovaCampanha")
 );
@@ -18,7 +22,7 @@ const modalNovaCampanha = new bootstrap.Modal(
 function renderizarTabela(campanhas) {
   tabelaCorpo.innerHTML = "";
 
-  campanhas.forEach((campanha) => {
+  campanhas.forEach((campanha) => { // objeto com informações da campanha, 
     const htmlLinha = `
             <tr>
                 <td><span class="text-muted">#${campanha.id}</span></td>
@@ -107,7 +111,12 @@ tabelaCorpo.addEventListener('click', (evento) => {
   if (botaoLog) {
     const idCampanha = botaoLog.dataset.id;
 
-    alert(`Bora trabalhar no Log da Campanha ID: ${idCampanha}`);
+    document.getElementById('idCampanhaLog').value = idCampanha;
+    document.getElementById('spanIdVisual').innerText = `#${idCampanha}`;
+
+    modalLogCampanha.show();
+
+    document.getElementById('txtLog').value = '';
   }
 });
 
