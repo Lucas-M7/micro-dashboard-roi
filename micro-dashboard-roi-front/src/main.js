@@ -8,6 +8,7 @@ import { api } from "./services/api.js";
 
 const tabelaCorpo = document.getElementById("tabela-corpo");
 const btnSalvarCampanha = document.getElementById("btnSalvarCampanha");
+const btnSalvarLog = document.getElementById("btnSalvarLog");
 const inputNome = document.getElementById("campanhaNome");
 const inputProduto = document.getElementById("campanhaProduto");
 
@@ -20,7 +21,7 @@ const modalNovaCampanha = new bootstrap.Modal(
 );
 
 function renderizarTabela(campanhas) {
-  tabelaCorpo.innerHTML = "";
+  tabelaCorpo.innerHTML = "";-
 
   campanhas.forEach((campanha) => { // objeto com informações da campanha, 
     const htmlLinha = `
@@ -116,7 +117,44 @@ tabelaCorpo.addEventListener('click', (evento) => {
 
     modalLogCampanha.show();
 
-    document.getElementById('txtLog').value = '';
+    document.getElementById('logData').valueAsDate = new Date();
+  }
+});
+
+btnSalvarLog.addEventListener('click', async () => {
+  const idCampanhaInput = document.getElementById("idCampanhaLog").value;
+  const dataSelecionada = document.getElementById("logData").value;
+  const valorSpend = document.getElementById("logSpend").value;
+  const valorRevenue = document.getElementById("logRevenue").value;
+
+  if (!dataSelecionada || !valorSpend || !valorRevenue) {
+    alert("Por favor, preencha a data e os valores!");
+    return;
+  }
+
+  try {
+    const idCampanha = parseInt(idCampanhaInput);
+
+    const dadosLog = {
+      date: dataSelecionada,
+      spend: parseFloat(valorSpend),
+      revenue: parseFloat(valorRevenue)
+    };
+
+    await api.addLog(idCampanha, dadosLog);
+
+    alert("Log da campanha salva com sucesso!");
+
+    modalLogCampanha.hide();
+
+    document.getElementById("logSpend").value = '';
+    document.getElementById("logRevenue").value = '';
+
+    await carregarDados();
+    
+  } catch (error) {
+    console.error(error);
+    alert("Erro ao salvar log. Verifique o console.");
   }
 });
 
