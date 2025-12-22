@@ -42,8 +42,8 @@ export const api = {
 
     // --- 3. GET STATS ---
     async getStats(campaignId) {
-        const repsonse = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/stats`);
-        if (!repsonse.ok) return null;
+        const response = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/stats`);
+        if (!response.ok) return null;
         return await response.json();
     },
 
