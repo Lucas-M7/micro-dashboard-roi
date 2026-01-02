@@ -71,7 +71,7 @@ const UI = {
 
     return `
             <tr>
-                <td><span class="text-muted">#${id}</span></td>
+                <td><span class="fw-bold">#${id}</span></td>
                 <td class="fw-bold">${name}</td>
                 <td>${product}</td>
                 <td class="text-end">
