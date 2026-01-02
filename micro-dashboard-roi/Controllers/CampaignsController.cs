@@ -18,8 +18,9 @@ public class CampaignsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateCampaign([FromBody] Campaign newCampaign)
     {
-        await _campaignService.CreateCampaign(newCampaign);
+        if (!ModelState.IsValid) return BadRequest(ModelState);
 
+        await _campaignService.CreateCampaign(newCampaign);
         return CreatedAtAction(nameof(GetCampaignById), new { id = newCampaign.Id }, newCampaign);
     }
 
@@ -27,11 +28,7 @@ public class CampaignsController : ControllerBase
     public async Task<IActionResult> GetCampaignById(int id)
     {
         var campaign = await _campaignService.GetCampaignById(id);
-
-        if (campaign == null)
-        {
-            return NotFound("Não foi possível encontrar a campanha com este ID.");
-        }
+        if (campaign == null) return NotFound(new { message = "Não foi possível encontrar a campanha com este ID." });
 
         return Ok(campaign);
     }
@@ -40,19 +37,14 @@ public class CampaignsController : ControllerBase
     public async Task<IActionResult> GetAllCampaigns()
     {
         var campaigns = await _campaignService.GetAllCampaigns();
-
         return Ok(campaigns);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCampaignById(int id)
     {
-       var deleted =  await _campaignService.DeleteCampaignById(id);
-
-       if(!deleted)
-        {
-            return NotFound("Não foi possível deletar. Campanha não encontrada.");
-        }
+        var deleted = await _campaignService.DeleteCampaignById(id);
+        if (!deleted) return NotFound(new { message = "Não foi possível deletar. Campanha não encontrada." });
 
         return NoContent();
     }
@@ -60,39 +52,30 @@ public class CampaignsController : ControllerBase
     [HttpPost("{id}/logs")]
     public async Task<IActionResult> AddLogToCampaign(int id, [FromBody] DailyLog newLog)
     {
-        var campaign = await _campaignService.AddLogToCampaign(id, newLog);
+        var result = await _campaignService.AddLogToCampaign(id, newLog);
 
-        if (campaign is null)
-        {
-            return NotFound("NNão foi possível adicionar um registro a campanha com este ID. Campanha não encontrada.");
-        }
+        if (result == null) return NotFound(new { message = "Não foi possível adicionar um registro a campanha com este ID. Campanha não encontrada." });
 
-        return Ok(campaign);
+        return Ok(result);
     }
 
     [HttpGet("{id}/logs")]
     public async Task<IActionResult> GetAllLogsOneCampaign(int id)
     {
-        var campaign = await _campaignService.GetLogsByCampaign(id);
+        var logs = await _campaignService.GetLogsByCampaign(id);
 
-        if (campaign == null)
-        {
-            return NotFound("Campanha não encontrada.");
-        }
+        if (logs == null) return NotFound(new { message = "Campanha não encontrada." });
 
-        return Ok(campaign);
+        return Ok(logs);
     }
 
     [HttpGet("{id}/stats")]
-    public async Task<IActionResult> GetOneCampaignStats(int id)
+    public async Task<IActionResult> GetStats(int id)
     {
-        var campaign = await _campaignService.GetCampaignStats(id);
+        var stats = await _campaignService.GetCampaignStats(id);
 
-        if (campaign is null)
-        {
-            return NotFound("Campanha não encontrada.");
-        }
+        if (stats == null) return NotFound(new { message = "Campanha não encontrada." });
 
-        return Ok(campaign);
+        return Ok(stats);
     }
 }

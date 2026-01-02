@@ -17,88 +17,56 @@ public class CampaignService : ICampaignService
 
     public async Task<CreateDailyLogDTO?> AddLogToCampaign(int campaignId, DailyLog dailyLog)
     {
-        var campaign = await _context.Campaigns.FindAsync(campaignId);
-
-        if (campaign == null)
-        {
-            return null;
-        }
+        var exists = await _context.Campaigns.AnyAsync(c => c.Id == campaignId);
+        if (!exists) return null;
 
         dailyLog.CampaignId = campaignId;
 
         _context.DailyLogs.Add(dailyLog);
         await _context.SaveChangesAsync();
 
-        var logDto = new CreateDailyLogDTO
+        return new CreateDailyLogDTO
         {
             Id = dailyLog.Id,
             Date = dailyLog.Date,
             Spend = dailyLog.Spend,
             Revenue = dailyLog.Revenue
         };
-
-        return logDto;
     }
 
     public async Task<Campaign> CreateCampaign(Campaign campaign)
     {
         _context.Campaigns.Add(campaign);
         await _context.SaveChangesAsync();
-
         return campaign;
-    }
-
-    public async Task<bool> DeleteCampaignById(int id)
-    {
-        var campaign = await _context.Campaigns.FindAsync(id);
-
-        if (campaign == null)
-        {
-            return false;
-        }
-
-        _context.Remove(campaign);
-        await _context.SaveChangesAsync();
-
-        return true;
     }
 
     public async Task<List<Campaign>> GetAllCampaigns()
     {
-        var campaigns = await _context.Campaigns.ToListAsync();
-
-        return campaigns;
+        return await _context.Campaigns.AsNoTracking().ToListAsync();
     }
 
     public async Task<CampaignDto?> GetCampaignById(int id)
     {
-        var campaign = await _context.Campaigns
-                                    .Include(c => c.Logs)
-                                    .FirstOrDefaultAsync(c => c.Id == id);
-
-        if(campaign == null)
-        {
-            return null;
-        }
-
-        var campaignDto = new CampaignDto
-        {
-            Id = campaign.Id,
-            Name = campaign.Name,
-            Product = campaign.Product
-        };
-
-        foreach (var log in campaign.Logs)
-        {
-            campaignDto.Logs.Add(new DailyLog
+        var campaignDto = await _context.Campaigns
+            .AsNoTracking()
+            .Where(c => c.Id == id)
+            .Select(c => new CampaignDto
             {
-                Id = log.Id,
-                Date = log.Date,
-                Spend = log.Spend,
-                Revenue = log.Revenue,
-                CampaignId = log.CampaignId
-            });
-        }
+                Id = c.Id,
+                Name = c.Name,
+                Product = c.Product,
+                // Mapeia a lista interna automaticamente
+                Logs = c.Logs.Select(l => new DailyLog
+                {
+                    Id = l.Id,
+                    Date = l.Date,
+                    Spend = l.Spend,
+                    Revenue = l.Revenue,
+                    CampaignId = l.CampaignId
+                }).ToList()
+            })
+            .FirstOrDefaultAsync();
 
         return campaignDto;
     }
@@ -106,35 +74,20 @@ public class CampaignService : ICampaignService
     public async Task<CampaignStatsDto?> GetCampaignStats(int campaignId)
     {
         var campaign = await _context.Campaigns
-                                    .Include(c => c.Logs)
-                                    .FirstOrDefaultAsync(c => c.Id == campaignId);
+            .Include(c => c.Logs)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == campaignId);
 
-        if (campaign == null)
-        {
-            return null;
-        }
+        if (campaign == null) return null;
 
-        decimal totalSpend = 0;
-        decimal totalRevenue = 0;
-
-        foreach (var log in campaign.Logs)
-        {
-            totalSpend += log.Spend;
-            totalRevenue += log.Revenue;
-        }
-
+        decimal totalSpend = campaign.Logs.Sum(l => l.Spend);
+        decimal totalRevenue = campaign.Logs.Sum(l => l.Revenue);
         decimal totalProfit = totalRevenue - totalSpend;
 
-        decimal roas = 0;
-        decimal roi = 0;
+        decimal roas = totalSpend > 0 ? totalRevenue / totalSpend : 0;
+        decimal roi = totalSpend > 0 ? (totalProfit / totalSpend) * 100 : 0;
 
-        if (totalSpend > 0)
-        {
-            roas = totalRevenue / totalSpend;
-            roi = totalProfit / totalSpend;
-        }
-
-        var statsDto = new CampaignStatsDto
+        return new CampaignStatsDto
         {
             CampaignId = campaign.Id,
             Name = campaign.Name,
@@ -144,27 +97,49 @@ public class CampaignService : ICampaignService
             ROAS = roas,
             ROI = roi,
         };
-
-        return statsDto;
     }
 
-    public async Task<List<DailyLogDTO>> GetLogsByCampaign(int campaignId)
+    public async Task<List<DailyLogDTO>?> GetLogsByCampaign(int campaignId)
     {
-        var campaign = await _context.Campaigns.AnyAsync(c => c.Id == campaignId);
+        var exists = await _context.Campaigns.AnyAsync(c => c.Id == campaignId);
+        if (!exists) return null;
 
-        var logsFromDb = await _context.DailyLogs
-                                        .Where(l => l.CampaignId == campaignId)
-                                        .ToListAsync();
+        return await _context.DailyLogs
+            .AsNoTracking()
+            .Where(l => l.CampaignId == campaignId)
+            .OrderByDescending(l => l.Date)
+            .Select(log => new DailyLogDTO
+            {
+                Id = log.Id,
+                Date = log.Date,
+                Spend = log.Spend,
+                Revenue = log.Revenue,
+                CampaignId = log.CampaignId
+            }).ToListAsync();
 
-        var logsDto = logsFromDb.Select(log => new DailyLogDTO
-        {
-            Id = log.Id,
-            Date = log.Date,
-            Spend = log.Spend,
-            Revenue = log.Revenue,
-            CampaignId = log.CampaignId
-        }).ToList();
+        // var logsFromDb = await _context.DailyLogs
+        //                                 .Where(l => l.CampaignId == campaignId)
+        //                                 .ToListAsync();
 
-        return logsDto;
+        // var logsDto = logsFromDb.Select(log => new DailyLogDTO
+        // {
+        //     Id = log.Id,
+        //     Date = log.Date,
+        //     Spend = log.Spend,
+        //     Revenue = log.Revenue,
+        //     CampaignId = log.CampaignId
+        // }).ToList();
+
+        // return logsDto;
+    }
+
+    public async Task<bool> DeleteCampaignById(int id)
+    {
+        var campaign = await _context.Campaigns.FindAsync(id);
+        if (campaign == null) return false;
+
+        _context.Campaigns.Remove(campaign);
+        await _context.SaveChangesAsync();
+        return true;
     }
 }
