@@ -27,11 +27,18 @@ const DOM = {
     revenue: document.getElementById("val-revenue"),
     roi: document.getElementById("val-roi"),
   },
+  stats: {
+    totalSpend: document.getElementById("statsTotalSpend"),
+    totalRevenue: document.getElementById("statsTotalRevenue"),
+    roi: document.getElementById("statsRoi"),
+    tabelaLogs: document.getElementById("tabela-logs-detalhes"),
+  },
   modals: {
     log: new bootstrap.Modal(document.getElementById("modalLogCampanha")),
     novaCampanha: new bootstrap.Modal(
       document.getElementById("modalNovaCampanha")
     ),
+    stats: new bootstrap.Modal(document.getElementById("modalStats")),
   },
 };
 
@@ -83,9 +90,9 @@ const UI = {
                     <button class="btn btn-sm btn-outline-light me-2 btn-add-log" data-id="${id}" title="Adicionar Log">
                         📝
                     </button>
-                    <button class="btn btn-sm btn-outline-info" title="Ver Estatísticas">
-                        📊
-                    </button>
+                    <button class="btn btn-sm btn-outline-info btn-view-stats" data-id="${id}" title="Ver Estatísticas">
+                    📊
+                </button>
                 </td>
             </tr>
         `;
@@ -107,7 +114,8 @@ const UI = {
 
   prepararModalLog: (idCampanha) => {
     DOM.inputs.idCampanhaLog.value = idCampanha;
-    DOM.inputs;spanIdVisual.innerText = `#${idCampanha}`;
+    DOM.inputs;
+    spanIdVisual.innerText = `#${idCampanha}`;
     DOM.inputs.logData.valueAsDate = new Date();
     DOM.modals.log.show();
   },
@@ -120,7 +128,72 @@ const UI = {
   limparFormularioCampanha: () => {
     DOM.inputs.campanhaNome.value = "";
     DOM.inputs.campanhaProduto.value = "";
-  }
+  },
+
+  preencherModalStats: (logs) => {
+    // Limpa tabela antiga
+    DOM.stats.tabelaLogs.innerHTML = "";
+
+    // BLINDAGEM: Verifica se 'logs' existe E se é realmente um Array
+    if (!logs || !Array.isArray(logs) || logs.length === 0) {
+      console.warn(
+        "Logs recebidos não são uma lista válida ou estão vazios:",
+        logs
+      );
+
+      DOM.stats.tabelaLogs.innerHTML =
+        "<tr><td colspan='4' class='text-center text-muted py-3'>Nenhum registro encontrado.</td></tr>";
+
+      // Zera contadores
+      DOM.stats.totalSpend.innerText = Utils.formatarMoeda(0);
+      DOM.stats.totalRevenue.innerText = Utils.formatarMoeda(0);
+      DOM.stats.roi.innerText = "0%";
+      return;
+    }
+
+    // Cálculos Totais do Modal
+    const totalSpend = logs.reduce((acc, l) => acc + l.spend, 0);
+    const totalRevenue = logs.reduce((acc, l) => acc + l.revenue, 0);
+    const roi = Utils.calcularROI(totalSpend, totalRevenue);
+
+    // Atualiza Cabeçalho do Modal
+    DOM.stats.totalSpend.innerText = Utils.formatarMoeda(totalSpend);
+    DOM.stats.totalRevenue.innerText = Utils.formatarMoeda(totalRevenue);
+    DOM.stats.roi.innerText = `${roi}%`;
+
+    // Ordenar logs por data (mais recente primeiro)
+    // Criamos uma cópia com [...logs] para não alterar o array original se ele for readonly
+    const logsOrdenados = [...logs].sort(
+      (a, b) => new Date(b.date) - new Date(a.date)
+    );
+
+    // Renderiza Linhas
+    const linhasHTML = logsOrdenados
+      .map((log) => {
+        const lucro = log.revenue - log.spend;
+        const corLucro = lucro >= 0 ? "text-success" : "text-danger";
+        const dataFormatada = new Date(log.date).toLocaleDateString("pt-BR");
+
+        return `
+                <tr>
+                    <td>${dataFormatada}</td>
+                    <td class="text-end text-danger">- ${Utils.formatarMoeda(
+                      log.spend
+                    )}</td>
+                    <td class="text-end text-success">+ ${Utils.formatarMoeda(
+                      log.revenue
+                    )}</td>
+                    <td class="text-end ${corLucro} fw-bold">${Utils.formatarMoeda(
+          lucro
+        )}</td>
+                </tr>
+            `;
+      })
+      .join("");
+
+    DOM.stats.tabelaLogs.innerHTML = linhasHTML;
+    DOM.modals.stats.show();
+  },
 };
 
 // --- 4. App Logic ---
@@ -133,8 +206,10 @@ const App = {
 
   initGlobalTooltips: () => {
     // inicializa popover ou tooltipes que estão fora da tabela
-    const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
-    [...popoverTriggerList].map(el => new bootstrap.Popover(el));
+    const popoverTriggerList = document.querySelectorAll(
+      '[data-bs-toggle="popover"]'
+    );
+    [...popoverTriggerList].map((el) => new bootstrap.Popover(el));
   },
 
   // lógica de buscar e transformar dados
@@ -145,25 +220,35 @@ const App = {
       // resolve o N+1 requests
       const campanhaComStats = await Promise.all(
         campanhaBase.map(async (campanha) => {
-          const stats = await api.getStats(campanha.id) || { spend: 0, revenue: 0, roi: 0 };
+          const stats = (await api.getStats(campanha.id)) || {
+            spend: 0,
+            revenue: 0,
+            roi: 0,
+          };
           return { ...campanha, stats };
         })
       );
 
       // cálculos gerais
-      const totalGasto = campanhaComStats.reduce((acc, c) => acc +  (c.stats.totalSpend || 0), 0);
-      const totalFaturamento = campanhaComStats.reduce((acc, c) => acc + (c.stats.totalRevenue || 0), 0);
+      const totalGasto = campanhaComStats.reduce(
+        (acc, c) => acc + (c.stats.totalSpend || 0),
+        0
+      );
+      const totalFaturamento = campanhaComStats.reduce(
+        (acc, c) => acc + (c.stats.totalRevenue || 0),
+        0
+      );
 
       // ordenação e filtro para tabela
       const recentes = [...campanhaComStats]
-        .sort((a, b) => b.id - a.id).slice(0, 5);
+        .sort((a, b) => b.id - a.id)
+        .slice(0, 5);
 
-        // atualiza UI
-        UI.renderizarDados(recentes);
-        UI.atualizarCards(totalGasto, totalFaturamento);
+      // atualiza UI
+      UI.renderizarDados(recentes);
+      UI.atualizarCards(totalGasto, totalFaturamento);
 
-        console.log("Dashboard atualizado.");
-
+      console.log("Dashboard atualizado.");
     } catch (error) {
       console.error("Erro no fluxo do dashboard;", error);
       alert("Não foi possível carregar os dados.");
@@ -204,7 +289,7 @@ const App = {
       await api.addLog(parseInt(id), {
         date: data,
         spend: parseFloat(spend),
-        revenue: parseFloat(revenue)
+        revenue: parseFloat(revenue),
       });
 
       alert("Log salvo com sucesso!");
@@ -217,41 +302,34 @@ const App = {
     }
   },
 
+  verEstatisticas: async (id) => {
+    try {
+      // buscando os logs daquela campanha
+      const logs = await api.getLogs(id);
+      UI.preencherModalStats(logs);
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao buscar detalhes da campanha.");
+    }
+  },
+
   setupEventListeners: () => {
     // event delegation para botões dinâmicos na tabela
     DOM.tabelaCorpo.addEventListener("click", (e) => {
-      const btn = e.target.closest(".btn-add-log");
-      if (btn) UI.prepararModalLog(btn.dataset.id);
+      const btnLog = e.target.closest(".btn-add-log");
+      if (btnLog) UI.prepararModalLog(btnLog.dataset.id);
+
+      const btnStats = e.target.closest(".btn-view-stats");
+      if (btnStats) App.verEstatisticas(btnStats.dataset.id);
     });
 
     DOM.buttons.salvarCampanha.addEventListener("click", App.criarCampanha);
     DOM.buttons.salvarLog.addEventListener("click", App.adicionarLog);
-  }
+  },
 };
 
 // iniciar aplicação
 document.addEventListener("DOMContentLoaded", App.init);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // const tabelaCorpo = document.getElementById("tabela-corpo");
 // const btnSalvarCampanha = document.getElementById("btnSalvarCampanha");

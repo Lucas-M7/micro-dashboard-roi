@@ -59,6 +59,10 @@ export const api = {
 
     async addLog(campaignId, logData) {
         return await request(`/campaigns/${campaignId}/logs`, 'POST', logData);
+    },
+
+    async getLogs(campaignId) {
+        return await request(`/campaigns/${campaignId}/stats`);
     }
 }
 

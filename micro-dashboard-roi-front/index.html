@@ -191,7 +191,8 @@
 
           <div class="modal-body">
             <input type="hidden" id="idCampanhaLog">
-            <p class="text-secondary">Lançando dados para: <strong id="spanIdVisual"
+            <p class="text-secondary">Lançando dados para: <strong
+                id="spanIdVisual"
                 class="text-white">...</strong></p>
 
             <form id="formNovoLog">
@@ -227,6 +228,60 @@
               data-bs-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-primary"
               id="btnSalvarLog">Salvar Log</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="modalStats" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered"> <div
+          class="modal-content bg-dark text-white border-secondary">
+          <div class="modal-header border-secondary">
+            <h5 class="modal-title">📊 Detalhes da Campanha</h5>
+            <button type="button" class="btn-close btn-close-white"
+              data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <div class="modal-body">
+            <div class="row text-center mb-4">
+              <div class="col-4 border-end border-secondary">
+                <small class="text-muted">Total Gasto</small>
+                <h4 class="text-danger" id="statsTotalSpend">R$ 0,00</h4>
+              </div>
+              <div class="col-4 border-end border-secondary">
+                <small class="text-muted">Total Retorno</small>
+                <h4 class="text-success" id="statsTotalRevenue">R$ 0,00</h4>
+              </div>
+              <div class="col-4">
+                <small class="text-muted">ROI Atual</small>
+                <h4 class="text-warning" id="statsRoi">0%</h4>
+              </div>
+            </div>
+
+            <h6
+              class="text-white border-bottom border-secondary pb-2 mb-3">Histórico
+              de Logs</h6>
+
+            <div class="table-responsive"
+              style="max-height: 300px; overflow-y: auto;">
+              <table class="table table-dark table-sm table-hover">
+                <thead>
+                  <tr>
+                    <th class="text-secondary">Data</th>
+                    <th class="text-secondary text-end">Gasto</th>
+                    <th class="text-secondary text-end">Retorno</th>
+                    <th class="text-secondary text-end">Lucro/Preju</th>
+                  </tr>
+                </thead>
+                <tbody id="tabela-logs-detalhes">
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="modal-footer border-secondary">
+            <button type="button" class="btn btn-secondary"
+              data-bs-dismiss="modal">Fechar</button>
           </div>
         </div>
       </div>
