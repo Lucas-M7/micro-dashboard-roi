@@ -62,7 +62,7 @@ export const api = {
     },
 
     async getLogs(campaignId) {
-        return await request(`/campaigns/${campaignId}/stats`);
+        return await request(`/campaigns/${campaignId}/logs`);
     }
 }
 
