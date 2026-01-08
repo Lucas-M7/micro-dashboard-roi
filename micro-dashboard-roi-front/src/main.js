@@ -215,7 +215,7 @@ const App = {
   // lógica de buscar e transformar dados
   carregarDados: async () => {
     try {
-      const campanhaBase = await api.getCampains();
+      const campanhaBase = await api.getCampaigns();
 
       // resolve o N+1 requests
       const campanhaComStats = await Promise.all(

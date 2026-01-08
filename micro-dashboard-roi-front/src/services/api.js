@@ -45,7 +45,7 @@ async function request(endpoint, method = "GET", body = null) {
 // objeto exportado com métodos semânticos e limpos
 export const api = {
     // --- campanhas ---
-    async getCampains() {
+    async getCampaigns() {
         return await request('/campaigns');
     },
 
