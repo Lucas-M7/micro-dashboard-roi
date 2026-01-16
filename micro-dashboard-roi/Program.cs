@@ -20,10 +20,10 @@ builder.Services.AddScoped<ICampaignService, CampaignService>();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend",
+    options.AddPolicy("AllowAll",
     policy =>
     {
-       policy.WithOrigins("http://localhost:5173")
+       policy.AllowAnyOrigin()
              .AllowAnyHeader()
              .AllowAnyMethod();    
     });
@@ -38,9 +38,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
-app.UseCors("AllowFrontend");
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 
