@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    image: mcr.microsoft.com/azure-sql-edge
+    container_name: sqlserver_roi
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=byPass123!
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql_data:/var/opt/mssql
+
+  api:
+    build:
+      context: ./micro-dashboard-roi
+      dockerfile: Dockerfile
+    container_name: api_roi
+    depends_on:
+      - db
+    ports:
+      - "5078:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Database=micro-dashboardDB;Trusted_Connection=True;TrustServerCertificate=True;Encrypt=false
+      - ASPNETCORE_URLS=http://+:8080
+
+volumes:
+  sql_data:
