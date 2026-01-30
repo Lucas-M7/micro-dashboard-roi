@@ -22,7 +22,7 @@ Embora existam soluções no mercado, decidi construir minha própria plataforma
 - [x] **Gestão de Campanhas:** CRUD completo para criar e gerenciar campanhas independentes da plataforma (Meta, Google, TikTok).
 - [x] **Logs Diários:** Registro de desempenho diário para cálculo preciso de métricas.
 - [x] **Cálculo Automático de ROI:** O sistema indica visualmente a saúde financeira da campanha.
-- [ ] **Containerização:** Implementação de Docker (Arquivos `Dockerfile` e `compose` já criados).
+- [x] **Containerização:** Implementação de Docker (Arquivos `Dockerfile` e `compose` já criados).
 
 ---
 
