@@ -2,6 +2,7 @@ using micro_dashboard_roi.Controllers;
 using micro_dashboard_roi.Data;
 using micro_dashboard_roi.Services;
 using micro_dashboard_roi.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +31,23 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<AppDbContext>();
+
+        context.Database.EnsureCreated();
+        Console.WriteLine("Banco de dados criado com sucesso!");
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Um erro ocorreu ao criar o banco de dados.");
+    }
+}
 
 if (app.Environment.IsDevelopment())
 {

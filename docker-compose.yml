@@ -4,9 +4,14 @@ services:
   db:
     image: mcr.microsoft.com/azure-sql-edge
     container_name: sqlserver_roi
+    restart: always
+    cap_add:
+    - SYS_PTRACE
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=byPass123!
+      - MSSQL_SA_PASSWORD=byPass123!@
+      - MSSQL_PID=Developer
+      - MSSQL_USER=sa
     ports:
       - "1433:1433"
     volumes:
@@ -22,7 +27,8 @@ services:
     ports:
       - "5078:8080"
     environment:
-      - ConnectionStrings__DefaultConnection=Server=db;Database=micro-dashboardDB;Trusted_Connection=True;TrustServerCertificate=True;Encrypt=false
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "ConnectionStrings__DefaultConnection=Server=db;Database=micro-dashboardDB;User Id=sa;Password=byPass123!@;TrustServerCertificate=True;Integrated Security=False;"
       - ASPNETCORE_URLS=http://+:8080
 
 volumes:

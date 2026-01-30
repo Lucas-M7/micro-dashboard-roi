@@ -63,6 +63,10 @@ export const api = {
 
     async getLogs(campaignId) {
         return await request(`/campaigns/${campaignId}/logs`);
+    },
+
+    async deleteCampaign(campaignId) {
+        return await request(`/campaigns/${campaignId}`, 'DELETE');
     }
 }
 

@@ -82,6 +82,9 @@ const UI = {
                     <button class="btn btn-sm btn-outline-info btn-view-stats" data-id="${campanha.id}" title="Ver Estatísticas">
                         📊
                     </button>
+                    <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${campanha.id}" title="Excluir Campanha">
+                        🗑️
+                    </button>
                 </td>
             </tr>
         `;
@@ -210,6 +213,8 @@ const App = {
         (a, b) => b.id - a.id
       );
 
+      console.log("Dados que vieram da api.", campanhasBase);
+
       UI.renderizarDados(campanhasOrdenadas);
 
       console.log("Lista de todas as campanhas carregada.");
@@ -238,6 +243,22 @@ const App = {
       await App.carregarTodasCampanhas();
     } catch (error) {
       alert(error.message);
+    }
+  },
+
+  deletarCampanha: async(id) => {
+    if (!confirm(`Tem certeza que deseja excluir a campanha #${id}? Essa ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    try {
+      await api.deleteCampaign(id);
+
+      alert("Campanha excluída com sucesso!");
+      await App.carregarTodasCampanhas();
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao excluir campanha.");
     }
   },
 
@@ -290,6 +311,10 @@ const App = {
       // Botão 📊 (Ver Estatísticas)
       const btnStats = e.target.closest(".btn-view-stats");
       if (btnStats) App.verEstatisticas(btnStats.dataset.id);
+
+      // Botão 🗑️ (Excluir)
+      const btnDelete = e.target.closest(".btn-delete");
+      if (btnDelete) App.deletarCampanha(btnDelete.dataset.id);
     });
 
     DOM.buttons.salvarCampanha.addEventListener("click", App.criarCampanha);
@@ -299,3 +324,4 @@ const App = {
 
 // Iniciar Aplicação quando o DOM estiver pronto
 document.addEventListener("DOMContentLoaded", App.init);
+
