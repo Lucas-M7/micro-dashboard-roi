@@ -22,7 +22,7 @@ Embora existam soluções no mercado, decidi construir minha própria plataforma
 - [x] **Gestão de Campanhas:** CRUD completo para criar e gerenciar campanhas independentes da plataforma (Meta, Google, TikTok).
 - [x] **Logs Diários:** Registro de desempenho diário para cálculo preciso de métricas.
 - [x] **Cálculo Automático de ROI:** O sistema indica visualmente a saúde financeira da campanha.
-- [x] **Containerização:** Implementação de Docker (Arquivos `Dockerfile` e `compose` já criados).
+- [x] **Containerização:** SQL Server e API já configurados no Docker.
 
 ---
 
@@ -58,6 +58,9 @@ Este projeto foi um divisor de águas no meu aprendizado técnico:
 
 3.  **Integração Real:**
     Fazer o "aperto de mão" entre o JavaScript puro e o Backend em C# me ensinou muito sobre verbos HTTP, Headers e tratamento de respostas assíncronas.
+
+4. **Conteinerização do Docker no Linux**
+   Como esse projeto foi finalizado durante uma migração do Windows para o Linux, tive algumas dificuldades para fazer o Docker rodar, como questões de segurança, conexão com Banco de Dados, mas fui tudo obstáculo vencido.
 
 ---
 
