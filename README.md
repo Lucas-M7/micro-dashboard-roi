@@ -66,27 +66,9 @@ Este projeto foi um divisor de águas no meu aprendizado técnico:
 
 ## 🚀 Como executar o projeto
 
-### Pré-requisitos
-Recomendo ter instalado:
-- [.NET SDK](https://dotnet.microsoft.com/download)
-- [SQL Server](https://www.microsoft.com/pt-br/sql-server/sql-server-downloads) (ou LocalDB)
-- [Node.js](https://nodejs.org/) (Opcional, caso use live-server via npm)
-
-### 1. Configurando o Back End
-
 ```bash
-# Clone o repositório
-$ git clone <>
-
-# Entre na pasta da API
-$ cd micro-dashboard-roi
-
-# IMPORTANTE: Configure sua Connection String no arquivo appsettings.json
-
-# Restaure as dependências e atualize o banco de dados
-$ dotnet restore
-$ dotnet ef database update # Caso use Entity Framework
-
-# Rode a API
-$ dotnet run
-# A API estará rodando em https://localhost:7000 (ou porta similar)
+1. Tenha o Docker instalado.
+2. Clone o repositório.
+3. Rode: `docker compose up -d --build`
+4. Acesse o Frontend: `http://localhost:5173`
+5. Acesse a Documentação da API: `http://localhost:5078/swagger` (opcional)
