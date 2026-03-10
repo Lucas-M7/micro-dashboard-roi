@@ -67,7 +67,7 @@ const UI = {
 
     return `
             <tr>
-                <td><span class="text-muted">#${campanha.id}</span></td>
+                <td><span class="text-secondary">#${campanha.id}</span></td>
                 <td class="fw-bold">${campanha.name}</td>
                 <td>${campanha.product}</td>
                 <td class="text-end">
@@ -135,7 +135,7 @@ const UI = {
     // BLINDAGEM: Verifica se 'logs' existe E se é realmente um Array
     if (!logs || !Array.isArray(logs) || logs.length === 0) {
       DOM.stats.tabelaLogs.innerHTML =
-        "<tr><td colspan='4' class='text-center text-muted py-3'>Nenhum registro encontrado.</td></tr>";
+        "<tr><td colspan='4' class='text-center py-3'>Nenhum registro encontrado.</td></tr>";
       DOM.stats.totalSpend.innerText = Utils.formatarMoeda(0);
       DOM.stats.totalRevenue.innerText = Utils.formatarMoeda(0);
       DOM.stats.roi.innerText = "0%";
