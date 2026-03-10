@@ -1,39 +1,480 @@
-body {
-  background-color: #121212;
-  color: #e0e0e0;
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Syne:wght@600;700&display=swap');
+
+/* ─── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --bg-base:      #0d0f14;
+  --bg-surface:   #13161e;
+  --bg-card:      #181c26;
+  --bg-hover:     #1e2330;
+  --border:       #232838;
+  --border-hi:    #2d3347;
+
+  --ice:          #8ecfdf;
+  --ice-dim:      #5ba8be;
+  --ice-glow:     rgba(142, 207, 223, 0.12);
+  --ice-glow-s:   rgba(142, 207, 223, 0.06);
+
+  --green:        #4ade80;
+  --green-dim:    rgba(74, 222, 128, 0.1);
+  --yellow:       #fbbf24;
+  --yellow-dim:   rgba(251, 191, 36, 0.1);
+  --red:          #f87171;
+  --red-dim:      rgba(248, 113, 113, 0.1);
+
+  --text-1:       #e8eaf0;
+  --text-2:       #8b90a0;
+  --text-3:       #555c72;
 }
 
+/* ─── BASE ───────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif !important;
+  background-color: var(--bg-base) !important;
+  color: var(--text-1) !important;
+}
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 4px; }
+
+/* ─── SIDEBAR ────────────────────────────────────────────── */
+aside.bg-dark {
+  background-color: var(--bg-surface) !important;
+  border-right: 1px solid var(--border) !important;
+  width: 220px !important;
+}
+
+/* Logo */
+aside .fs-4 {
+  font-family: 'Syne', sans-serif !important;
+  font-size: 1.05rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+  color: var(--text-1) !important;
+}
+
+/* Divisor */
+aside hr {
+  border-color: var(--border) !important;
+  opacity: 1 !important;
+  margin: 12px 0 !important;
+}
+
+/* Nav links */
+aside .nav-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-2) !important;
+  border-radius: 8px !important;
+  padding: 9px 12px !important;
+  margin-bottom: 2px;
+  border: 1px solid transparent !important;
+  transition: all 0.15s ease !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+aside .nav-link:hover {
+  background-color: var(--bg-hover) !important;
+  color: var(--text-1) !important;
+}
+aside .nav-link.active {
+  background-color: var(--ice-glow) !important;
+  color: var(--ice) !important;
+  border-color: rgba(142, 207, 223, 0.15) !important;
+}
+
+/* User footer */
+aside strong { color: var(--text-1) !important; font-size: 0.875rem; }
+aside .rounded-circle {
+  border: 2px solid var(--border-hi) !important;
+  background: linear-gradient(135deg, var(--ice-dim), var(--ice));
+}
+
+/* ─── TOPBAR / HEADER ────────────────────────────────────── */
+header.border-bottom {
+  border-color: var(--border) !important;
+  padding-top: 0 !important;
+  padding-bottom: 16px !important;
+  margin-bottom: 28px !important;
+}
+
+header h1 {
+  font-family: 'Syne', sans-serif !important;
+  font-size: 1.05rem !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em;
+  color: var(--text-1) !important;
+}
+
+/* Botão Atualizar */
+header .btn-outline-secondary {
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  padding: 7px 14px !important;
+  border-radius: 8px !important;
+  border-color: var(--border-hi) !important;
+  color: var(--text-2) !important;
+  background: transparent !important;
+  transition: all 0.15s ease !important;
+}
+header .btn-outline-secondary:hover {
+  background-color: var(--bg-hover) !important;
+  border-color: var(--border-hi) !important;
+  color: var(--text-1) !important;
+}
+
+/* ─── METRIC CARDS ───────────────────────────────────────── */
 .card {
-  background-color: #1e1e2f !important;
-  border: 1px solid #2d2d44;
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-left: none !important;
+  border-radius: 12px !important;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* Linha de topo luminosa */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(142,207,223,0.25), transparent);
+  pointer-events: none;
 }
 
 .card:hover {
-  transform: translateY(-5px);
-  transition: transform 0.3s ease;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3) !important;
+  transform: translateY(-2px) !important;
+  border-color: var(--border-hi) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25) !important;
 }
 
-/* Tabela Elegante */
+/* Sobrescreve a borda colorida lateral do Bootstrap */
+.card[style*="border-left"] {
+  border-left: none !important;
+}
+
+/* Card de ROI — destaque especial */
+.card.border-warning {
+  border-color: rgba(142, 207, 223, 0.18) !important;
+  box-shadow: 0 0 30px var(--ice-glow-s) !important;
+}
+.card.border-warning::before {
+  background: linear-gradient(90deg, transparent, rgba(142,207,223,0.5), transparent) !important;
+}
+
+.card-body { padding: 22px 24px !important; }
+
+.card-title {
+  font-size: 0.68rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.1em !important;
+  color: var(--text-3) !important;
+  margin-bottom: 12px !important;
+}
+
+/* Valores numéricos com DM Mono */
+.card-text.fs-2 {
+  font-family: 'DM Mono', monospace !important;
+  font-size: 1.75rem !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  margin-bottom: 8px !important;
+}
+
+.text-primary { color: var(--ice) !important; }
+.text-success { color: var(--green) !important; }
+.text-warning { color: var(--yellow) !important; }
+.text-danger  { color: var(--red) !important; }
+
+.card .text-secondary {
+  font-size: 0.72rem !important;
+  color: var(--text-3) !important;
+}
+
+/* ─── SECTION TITLES ─────────────────────────────────────── */
+.h4 {
+  font-family: 'Syne', sans-serif !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  color: var(--text-1) !important;
+  letter-spacing: -0.01em;
+}
+
+/* ─── BOTÃO + Nova Campanha ──────────────────────────────── */
+.btn-primary {
+  background-color: var(--ice) !important;
+  border-color: var(--ice) !important;
+  color: var(--bg-base) !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  padding: 8px 18px !important;
+  border-radius: 8px !important;
+  transition: all 0.15s ease !important;
+  letter-spacing: 0.01em;
+}
+.btn-primary:hover {
+  background-color: #a8dced !important;
+  border-color: #a8dced !important;
+  box-shadow: 0 0 18px var(--ice-glow) !important;
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0) !important;
+}
+
+/* ─── TABELA ─────────────────────────────────────────────── */
+.table-responsive.bg-dark,
+div.bg-dark.rounded {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
 .table-dark {
-    background-color: transparent; /* Remove o fundo padrão cinza do bootstrap */
-    --bs-table-bg: transparent;
+  background-color: transparent !important;
+  --bs-table-bg: transparent !important;
+  --bs-table-hover-bg: var(--bg-hover) !important;
+  color: var(--text-2) !important;
+  margin-bottom: 0 !important;
 }
 
-/* Remove as linhas brancas fortes e coloca uma linha sutil */
-.table>:not(caption)>*>* {
-    border-bottom-width: 1px;
-    border-color: #2d2d44; 
+/* Cabeçalho */
+.table thead tr {
+  border-bottom: 1px solid var(--border) !important;
 }
-
-/* Texto pequeno para os cabeçalhos */
+.table thead th {
+  padding: 13px 20px !important;
+  background: transparent !important;
+  border-bottom: none !important;
+}
 .fs-7 {
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
+  font-size: 0.68rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.09em !important;
+  color: var(--text-3) !important;
+  text-transform: uppercase;
 }
 
-/* Hover na linha da tabela */
-.table-hover > tbody > tr:hover {
-    background-color: rgba(255, 255, 255, 0.05); /* Efeito de luz ao passar o mouse */
-    cursor: pointer;
+/* Linhas do body */
+.table > :not(caption) > * > * {
+  padding: 14px 20px !important;
+  border-bottom: 1px solid var(--border) !important;
+  border-top: none !important;
+  background-color: transparent !important;
+  color: var(--text-2) !important;
+}
+.table tbody tr:last-child > * {
+  border-bottom: none !important;
+}
+.table tbody tr {
+  transition: background-color 0.12s ease !important;
+}
+.table-hover > tbody > tr:hover > * {
+  background-color: var(--bg-hover) !important;
+  cursor: pointer;
+}
+
+/* IDs com mono */
+.table tbody td:first-child {
+  font-family: 'DM Mono', monospace !important;
+  font-size: 0.78rem !important;
+  color: var(--text-3) !important;
+}
+
+/* Nome em destaque */
+.table tbody td:nth-child(2) {
+  font-weight: 500 !important;
+  color: var(--text-1) !important;
+}
+
+/* ─── ROI PILLS NA TABELA ────────────────────────────────── */
+/* Aplicado via JS nas células de ROI */
+.roi-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.roi-pill.positive { background: var(--green-dim); color: var(--green); }
+.roi-pill.zero     { background: rgba(85,92,114,0.12); color: var(--text-3); }
+.roi-pill.negative { background: var(--red-dim); color: var(--red); }
+
+/* ─── BOTÕES DE AÇÃO NA TABELA ───────────────────────────── */
+.btn-action {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(142, 207, 223, 0.2);
+  background: transparent;
+  color: var(--ice-dim);
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-action:hover {
+  background: var(--ice-glow);
+  border-color: rgba(142, 207, 223, 0.4);
+  color: var(--ice);
+  transform: translateY(-1px);
+}
+.btn-action.btn-del {
+  border-color: var(--border);
+  color: var(--text-3);
+}
+.btn-action.btn-del:hover {
+  background: var(--red-dim);
+  border-color: rgba(248,113,113,0.3);
+  color: var(--red);
+  transform: translateY(-1px);
+}
+
+/* ─── FOOTER ─────────────────────────────────────────────── */
+footer.border-top {
+  border-color: var(--border) !important;
+}
+footer p {
+  font-size: 0.72rem !important;
+  color: var(--text-3) !important;
+}
+footer a.text-white {
+  color: var(--ice-dim) !important;
+  font-weight: 600 !important;
+  transition: color 0.15s;
+}
+footer a.text-white:hover {
+  color: var(--ice) !important;
+}
+
+/* ─── MODAIS ─────────────────────────────────────────────── */
+.modal-content {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-hi) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5) !important;
+  color: var(--text-1) !important;
+}
+
+.modal-header {
+  border-bottom-color: var(--border) !important;
+  padding: 20px 24px 16px !important;
+}
+.modal-title {
+  font-family: 'Syne', sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  color: var(--text-1) !important;
+}
+.modal-footer {
+  border-top-color: var(--border) !important;
+  padding: 16px 24px !important;
+}
+.modal-body { padding: 20px 24px !important; }
+
+/* Backdrop */
+.modal-backdrop.show { opacity: 0.65 !important; }
+
+/* Inputs */
+.form-control,
+.form-select {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-1) !important;
+  border-radius: 8px !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: 0.875rem !important;
+  padding: 9px 12px !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--ice-dim) !important;
+  box-shadow: 0 0 0 3px rgba(142, 207, 223, 0.12) !important;
+  background-color: var(--bg-surface) !important;
+  color: var(--text-1) !important;
+  outline: none !important;
+}
+.form-control::placeholder { color: var(--text-3) !important; }
+
+.form-label {
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  color: var(--text-2) !important;
+  margin-bottom: 6px !important;
+  letter-spacing: 0.02em;
+}
+
+/* Botão cancelar no modal */
+.btn-outline-light {
+  background: transparent !important;
+  border-color: var(--border-hi) !important;
+  color: var(--text-2) !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  transition: all 0.15s ease !important;
+}
+.btn-outline-light:hover {
+  background-color: var(--bg-hover) !important;
+  border-color: var(--border-hi) !important;
+  color: var(--text-1) !important;
+}
+.btn-secondary {
+  background: var(--bg-hover) !important;
+  border-color: var(--border-hi) !important;
+  color: var(--text-2) !important;
+  font-size: 0.82rem !important;
+  border-radius: 8px !important;
+  transition: all 0.15s !important;
+}
+.btn-secondary:hover {
+  background: var(--border-hi) !important;
+  color: var(--text-1) !important;
+}
+
+/* Btn-close branco */
+.btn-close-white {
+  filter: invert(1) grayscale(1) brightness(0.7) !important;
+  opacity: 0.5 !important;
+  transition: opacity 0.15s !important;
+}
+.btn-close-white:hover { opacity: 1 !important; }
+
+/* Stats modal */
+.modal .border-end.border-secondary {
+  border-color: var(--border) !important;
+}
+.modal small { color: var(--text-3) !important; font-size: 0.72rem !important; }
+
+/* Tabela dentro do modal */
+.modal .table-dark { color: var(--text-2) !important; }
+.modal .table-sm > :not(caption) > * > * { padding: 10px 12px !important; }
+
+/* ─── ANIMAÇÃO DE ENTRADA ────────────────────────────────── */
+.row.g-4 .col-md-4 {
+  animation: fadeUp 0.35s ease both;
+}
+.row.g-4 .col-md-4:nth-child(1) { animation-delay: 0.05s; }
+.row.g-4 .col-md-4:nth-child(2) { animation-delay: 0.1s; }
+.row.g-4 .col-md-4:nth-child(3) { animation-delay: 0.15s; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
