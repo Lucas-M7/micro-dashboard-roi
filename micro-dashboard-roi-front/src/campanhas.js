@@ -16,12 +16,16 @@ const DOM = {
     logSpend: document.getElementById("logSpend"),
     logRevenue: document.getElementById("logRevenue"),
     spanIdVisual: document.getElementById("spanIdVisual"),
+    // Inputs do modal de edição
+    editId: document.getElementById("editCampanhaId"),
+    editNome: document.getElementById("editCampanhaNome"),
+    editProduto: document.getElementById("editCampanhaProduto"),
   },
   buttons: {
     salvarCampanha: document.getElementById("btnSalvarCampanha"),
     salvarLog: document.getElementById("btnSalvarLog"),
+    salvarEdicao: document.getElementById("btnSalvarEdicao"),
   },
-  // Elementos do Modal de Estatísticas
   stats: {
     totalSpend: document.getElementById("statsTotalSpend"),
     totalRevenue: document.getElementById("statsTotalRevenue"),
@@ -34,10 +38,11 @@ const DOM = {
       document.getElementById("modalNovaCampanha")
     ),
     stats: new bootstrap.Modal(document.getElementById("modalStats")),
+    editar: new bootstrap.Modal(document.getElementById("modalEditarCampanha")),
   },
 };
 
-// --- 2. Utilitários (Funções Puras - Matemática e Formatação) ---
+// --- 2. Utilitários ---
 const Utils = {
   formatarMoeda: (valor) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -52,42 +57,51 @@ const Utils = {
   },
 };
 
-// --- 3. UI Controller (Manipulação da Tela) ---
+// --- 3. UI Controller ---
 const UI = {
   limparTabela: () => {
     DOM.tabelaCorpo.innerHTML = "";
   },
 
   criarLinhaHTML: (campanha) => {
-    // Se stats vier null (campanha nova sem logs), usa valores padrão
     const statsSafe = campanha.stats || { roi: 0 };
     const roi = statsSafe.roi;
-    const corBadge =
-      roi >= 0 ? "text-success bg-success" : "text-danger bg-danger";
+
+    // ROI pill com classe semântica (estilo vem do style.css)
+    const roiClass = roi > 0 ? "positive" : roi < 0 ? "negative" : "zero";
+    const roiSinal = roi > 0 ? "↑" : roi < 0 ? "↓" : "—";
 
     return `
-            <tr>
-                <td><span class="text-secondary">#${campanha.id}</span></td>
-                <td class="fw-bold">${campanha.name}</td>
-                <td>${campanha.product}</td>
-                <td class="text-end">
-                    <span class="badge ${corBadge} bg-opacity-10 px-3 py-2 rounded-pill">
-                        ${roi}%
-                    </span>
-                </td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-outline-light me-2 btn-add-log" data-id="${campanha.id}" title="Adicionar Log">
-                        📝
-                    </button>
-                    <button class="btn btn-sm btn-outline-info btn-view-stats" data-id="${campanha.id}" title="Ver Estatísticas">
-                        📊
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${campanha.id}" title="Excluir Campanha">
-                        🗑️
-                    </button>
-                </td>
-            </tr>
-        `;
+      <tr>
+        <td><span class="text-secondary">#${campanha.id}</span></td>
+        <td class="fw-bold">${campanha.name}</td>
+        <td>${campanha.product}</td>
+        <td class="text-end">
+          <span class="roi-pill ${roiClass}">${roiSinal} ${roi}%</span>
+        </td>
+        <td class="text-end">
+          <button class="btn-action btn-add-log"
+            data-id="${campanha.id}" title="Adicionar Log">
+            📝
+          </button>
+          <button class="btn-action btn-view-stats"
+            data-id="${campanha.id}" title="Ver Estatísticas">
+            📊
+          </button>
+          <button class="btn-action btn-edit"
+            data-id="${campanha.id}"
+            data-nome="${campanha.name}"
+            data-produto="${campanha.product}"
+            title="Editar Campanha">
+            ✏️
+          </button>
+          <button class="btn-action btn-del btn-delete"
+            data-id="${campanha.id}" title="Excluir Campanha">
+            🗑️
+          </button>
+        </td>
+      </tr>
+    `;
   },
 
   renderizarDados: (campanhas) => {
@@ -95,27 +109,31 @@ const UI = {
 
     if (campanhas.length === 0) {
       DOM.tabelaCorpo.innerHTML =
-        '<tr><td colspan="5" class="text-center text-muted py-4">Nenhuma campanha encontrada.</td></tr>';
+        '<tr><td colspan="5" class="text-center py-4" style="color:var(--text-3)">Nenhuma campanha encontrada.</td></tr>';
       return;
     }
 
-    // Renderiza linhas usando map e join (mais performático)
-    const linhasHTML = campanhas
-      .map((campanha) => UI.criarLinhaHTML(campanha))
+    DOM.tabelaCorpo.innerHTML = campanhas
+      .map((c) => UI.criarLinhaHTML(c))
       .join("");
-    DOM.tabelaCorpo.innerHTML = linhasHTML;
 
-    // Inicializa Tooltips apenas nos novos elementos
     const tooltipTriggerList = DOM.tabelaCorpo.querySelectorAll("[title]");
     [...tooltipTriggerList].map((t) => new bootstrap.Tooltip(t));
   },
 
-  // --- Funções dos Modais (Reaproveitadas) ---
   prepararModalLog: (idCampanha) => {
     DOM.inputs.idCampanhaLog.value = idCampanha;
     DOM.inputs.spanIdVisual.innerText = `#${idCampanha}`;
     DOM.inputs.logData.valueAsDate = new Date();
     DOM.modals.log.show();
+  },
+
+  // Pré-preenche o modal de edição com os dados atuais da campanha
+  prepararModalEdicao: (id, nome, produto) => {
+    DOM.inputs.editId.value = id;
+    DOM.inputs.editNome.value = nome;
+    DOM.inputs.editProduto.value = produto;
+    DOM.modals.editar.show();
   },
 
   limparFormularioLog: () => {
@@ -128,32 +146,27 @@ const UI = {
     DOM.inputs.campanhaProduto.value = "";
   },
 
-  // Função para preencher o modal de estatísticas (Corrigida com validação de array)
   preencherModalStats: (logs) => {
     DOM.stats.tabelaLogs.innerHTML = "";
 
-    // BLINDAGEM: Verifica se 'logs' existe E se é realmente um Array
     if (!logs || !Array.isArray(logs) || logs.length === 0) {
       DOM.stats.tabelaLogs.innerHTML =
-        "<tr><td colspan='4' class='text-center py-3'>Nenhum registro encontrado.</td></tr>";
+        "<tr><td colspan='4' class='text-center py-3' style='color:var(--text-3)'>Nenhum registro encontrado.</td></tr>";
       DOM.stats.totalSpend.innerText = Utils.formatarMoeda(0);
       DOM.stats.totalRevenue.innerText = Utils.formatarMoeda(0);
       DOM.stats.roi.innerText = "0%";
-      DOM.modals.stats.show(); // Mostra mesmo vazio
+      DOM.modals.stats.show();
       return;
     }
 
-    // Cálculos Totais do Modal
     const totalSpend = logs.reduce((acc, l) => acc + l.spend, 0);
     const totalRevenue = logs.reduce((acc, l) => acc + l.revenue, 0);
     const roi = Utils.calcularROI(totalSpend, totalRevenue);
 
-    // Atualiza Cabeçalho do Modal
     DOM.stats.totalSpend.innerText = Utils.formatarMoeda(totalSpend);
     DOM.stats.totalRevenue.innerText = Utils.formatarMoeda(totalRevenue);
     DOM.stats.roi.innerText = `${roi}%`;
 
-    // Ordenar logs por data (mais recente primeiro) e renderizar
     const linhasHTML = [...logs]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .map((log) => {
@@ -161,19 +174,13 @@ const UI = {
         const corLucro = lucro >= 0 ? "text-success" : "text-danger";
         const dataFormatada = new Date(log.date).toLocaleDateString("pt-BR");
         return `
-                    <tr>
-                        <td>${dataFormatada}</td>
-                        <td class="text-end text-danger">- ${Utils.formatarMoeda(
-                          log.spend
-                        )}</td>
-                        <td class="text-end text-success">+ ${Utils.formatarMoeda(
-                          log.revenue
-                        )}</td>
-                        <td class="text-end ${corLucro} fw-bold">${Utils.formatarMoeda(
-          lucro
-        )}</td>
-                    </tr>
-                `;
+          <tr>
+            <td>${dataFormatada}</td>
+            <td class="text-end text-danger">- ${Utils.formatarMoeda(log.spend)}</td>
+            <td class="text-end text-success">+ ${Utils.formatarMoeda(log.revenue)}</td>
+            <td class="text-end ${corLucro} fw-bold">${Utils.formatarMoeda(lucro)}</td>
+          </tr>
+        `;
       })
       .join("");
 
@@ -182,25 +189,20 @@ const UI = {
   },
 };
 
-// --- 4. App Logic (Orquestração e Eventos) ---
+// --- 4. App Logic ---
 const App = {
   init: () => {
     App.setupEventListeners();
     App.carregarTodasCampanhas();
   },
 
-  // Lógica principal desta página: Buscar TUDO
   carregarTodasCampanhas: async () => {
     try {
-      // 1. Busca a lista base de campanhas
       const campanhasBase = await api.getCampaigns();
 
-      // 2. Enriquece cada campanha chamando o endpoint de /stats
-      // (Necessário para mostrar o ROI Global na tabela principal)
       const campanhasComStats = await Promise.all(
         campanhasBase.map(async (campanha) => {
           const stats = await api.getStats(campanha.id);
-          // Se stats for null, usa um objeto padrão para não quebrar a UI
           return {
             ...campanha,
             stats: stats || { roi: 0, totalSpend: 0, totalRevenue: 0 },
@@ -208,27 +210,22 @@ const App = {
         })
       );
 
-      // 3. Ordena por ID decrescente (mais novas primeiro)
       const campanhasOrdenadas = [...campanhasComStats].sort(
         (a, b) => b.id - a.id
       );
 
-      console.log("Dados que vieram da api.", campanhasBase);
-
       UI.renderizarDados(campanhasOrdenadas);
-
-      console.log("Lista de todas as campanhas carregada.");
+      console.log("Lista de campanhas carregada.");
     } catch (error) {
       console.error("Erro ao carregar campanhas:", error);
       DOM.tabelaCorpo.innerHTML =
-        '<tr><td colspan="5" class="text-center text-danger py-4">Erro ao carregar dados da API.</td></tr>';
+        '<tr><td colspan="5" class="text-center py-4" style="color:var(--red)">Erro ao carregar dados da API.</td></tr>';
     }
   },
 
-  // --- Ações dos Botões (Reaproveitadas) ---
   criarCampanha: async () => {
-    const nome = DOM.inputs.campanhaNome.value;
-    const produto = DOM.inputs.campanhaProduto.value;
+    const nome = DOM.inputs.campanhaNome.value.trim();
+    const produto = DOM.inputs.campanhaProduto.value.trim();
 
     if (!nome || !produto) {
       alert("Preencha todos os campos!");
@@ -239,22 +236,43 @@ const App = {
       await api.createCampaign({ name: nome, product: produto });
       UI.limparFormularioCampanha();
       DOM.modals.novaCampanha.hide();
-      // Recarrega a lista após criar
       await App.carregarTodasCampanhas();
     } catch (error) {
       alert(error.message);
     }
   },
 
-  deletarCampanha: async(id) => {
-    if (!confirm(`Tem certeza que deseja excluir a campanha #${id}? Essa ação não pode ser desfeita.`)) {
+  // NOVO: lê os inputs do modal de edição e chama o PUT
+  editarCampanha: async () => {
+    const id = DOM.inputs.editId.value;
+    const nome = DOM.inputs.editNome.value.trim();
+    const produto = DOM.inputs.editProduto.value.trim();
+
+    if (!nome || !produto) {
+      alert("Preencha todos os campos!");
       return;
     }
 
     try {
-      await api.deleteCampaign(id);
+      await api.updateCampaign(id, { name: nome, product: produto });
+      DOM.modals.editar.hide();
+      await App.carregarTodasCampanhas();
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao atualizar campanha.");
+    }
+  },
 
-      alert("Campanha excluída com sucesso!");
+  deletarCampanha: async (id) => {
+    if (
+      !confirm(
+        `Tem certeza que deseja excluir a campanha #${id}? Essa ação não pode ser desfeita.`
+      )
+    )
+      return;
+
+    try {
+      await api.deleteCampaign(id);
       await App.carregarTodasCampanhas();
     } catch (error) {
       console.error(error);
@@ -282,7 +300,6 @@ const App = {
       alert("Log salvo com sucesso!");
       DOM.modals.log.hide();
       UI.limparFormularioLog();
-      // Recarrega a lista para atualizar o ROI
       await App.carregarTodasCampanhas();
     } catch (error) {
       console.error(error);
@@ -293,7 +310,6 @@ const App = {
   verEstatisticas: async (id) => {
     try {
       const logs = await api.getLogs(id);
-      // Chama a função da UI que preenche e abre o modal
       UI.preencherModalStats(logs);
     } catch (error) {
       console.error(error);
@@ -302,26 +318,32 @@ const App = {
   },
 
   setupEventListeners: () => {
-    // Event Delegation para botões da tabela
+    // Event delegation — um único listener para todos os botões da tabela
     DOM.tabelaCorpo.addEventListener("click", (e) => {
-      // Botão 📝 (Adicionar Log)
       const btnLog = e.target.closest(".btn-add-log");
-      if (btnLog) UI.prepararModalLog(btnLog.dataset.id);
+      if (btnLog) return UI.prepararModalLog(btnLog.dataset.id);
 
-      // Botão 📊 (Ver Estatísticas)
       const btnStats = e.target.closest(".btn-view-stats");
-      if (btnStats) App.verEstatisticas(btnStats.dataset.id);
+      if (btnStats) return App.verEstatisticas(btnStats.dataset.id);
 
-      // Botão 🗑️ (Excluir)
+      // NOVO: captura dados via data-attributes para evitar re-fetch
+      const btnEdit = e.target.closest(".btn-edit");
+      if (btnEdit) {
+        return UI.prepararModalEdicao(
+          btnEdit.dataset.id,
+          btnEdit.dataset.nome,
+          btnEdit.dataset.produto
+        );
+      }
+
       const btnDelete = e.target.closest(".btn-delete");
-      if (btnDelete) App.deletarCampanha(btnDelete.dataset.id);
+      if (btnDelete) return App.deletarCampanha(btnDelete.dataset.id);
     });
 
     DOM.buttons.salvarCampanha.addEventListener("click", App.criarCampanha);
     DOM.buttons.salvarLog.addEventListener("click", App.adicionarLog);
+    DOM.buttons.salvarEdicao.addEventListener("click", App.editarCampanha);
   },
 };
 
-// Iniciar Aplicação quando o DOM estiver pronto
 document.addEventListener("DOMContentLoaded", App.init);
-

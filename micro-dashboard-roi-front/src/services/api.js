@@ -53,6 +53,10 @@ export const api = {
         return await request('/campaigns', 'POST', campaignData);
     },
 
+    async updateCampaign(campaignId, campaignData) {
+        return await request(`/campaigns/${campaignId}`, "PUT", campaignData)
+    },
+
     async getStats(campaignId) {
         return await request(`/campaigns/${campaignId}/stats`);
     },

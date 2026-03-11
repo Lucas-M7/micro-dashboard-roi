@@ -2,6 +2,7 @@ using micro_dashboard_roi.Data;
 using micro_dashboard_roi.DTOs;
 using micro_dashboard_roi.Models;
 using micro_dashboard_roi.Services.Interfaces;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace micro_dashboard_roi.Services;
@@ -37,6 +38,18 @@ public class CampaignService : ICampaignService
     public async Task<Campaign> CreateCampaign(Campaign campaign)
     {
         _context.Campaigns.Add(campaign);
+        await _context.SaveChangesAsync();
+        return campaign;
+    }
+
+    public async Task<Campaign?> UpdateCampaign(int id, UpdateCampaignDto dto)
+    {
+        var campaign = await _context.Campaigns.FindAsync(id);
+        if (campaign == null) return null;
+
+        campaign.Name = dto.Name;
+        campaign.Product = dto.Product;
+
         await _context.SaveChangesAsync();
         return campaign;
     }

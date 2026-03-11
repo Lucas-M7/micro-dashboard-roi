@@ -1,3 +1,4 @@
+using micro_dashboard_roi.DTOs;
 using micro_dashboard_roi.Models;
 using micro_dashboard_roi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -22,6 +23,17 @@ public class CampaignsController : ControllerBase
 
         await _campaignService.CreateCampaign(newCampaign);
         return CreatedAtAction(nameof(GetCampaignById), new { id = newCampaign.Id }, newCampaign);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateCampaign(int id, [FromBody] UpdateCampaignDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+
+        var updated = await _campaignService.UpdateCampaign(id, dto);
+        if (updated == null) return NotFound(new { message = "Campanha não encontrada" });
+
+        return Ok(updated);
     }
 
     [HttpGet("{id}")]
