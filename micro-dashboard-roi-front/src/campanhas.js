@@ -2,12 +2,14 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import * as bootstrap from "bootstrap";
 import "./assets/style.css";
 import { api } from "./services/api.js";
+import { Toast } from "./services/toast.js";
 
 window.bootstrap = bootstrap;
 
-// --- 1. Mapeamento de Elementos do DOM (Cache) ---
+// --- 1. Mapeamento de Elementos do DOM ---
 const DOM = {
   tabelaCorpo: document.getElementById("tabela-corpo"),
+  btnAbrirNovaCampanha: document.getElementById("btnAbrirNovaCampanha"),
   inputs: {
     campanhaNome: document.getElementById("campanhaNome"),
     campanhaProduto: document.getElementById("campanhaProduto"),
@@ -16,7 +18,6 @@ const DOM = {
     logSpend: document.getElementById("logSpend"),
     logRevenue: document.getElementById("logRevenue"),
     spanIdVisual: document.getElementById("spanIdVisual"),
-    // Inputs do modal de edição
     editId: document.getElementById("editCampanhaId"),
     editNome: document.getElementById("editCampanhaNome"),
     editProduto: document.getElementById("editCampanhaProduto"),
@@ -25,6 +26,10 @@ const DOM = {
     salvarCampanha: document.getElementById("btnSalvarCampanha"),
     salvarLog: document.getElementById("btnSalvarLog"),
     salvarEdicao: document.getElementById("btnSalvarEdicao"),
+    confirmarDelete: document.getElementById("btnConfirmarDelete"),
+  },
+  delete: {
+    nomeCampanha: document.getElementById("deleteNomeCampanha"),
   },
   stats: {
     totalSpend: document.getElementById("statsTotalSpend"),
@@ -34,40 +39,71 @@ const DOM = {
   },
   modals: {
     log: new bootstrap.Modal(document.getElementById("modalLogCampanha")),
-    novaCampanha: new bootstrap.Modal(
-      document.getElementById("modalNovaCampanha")
-    ),
+    novaCampanha: new bootstrap.Modal(document.getElementById("modalNovaCampanha")),
     stats: new bootstrap.Modal(document.getElementById("modalStats")),
     editar: new bootstrap.Modal(document.getElementById("modalEditarCampanha")),
+    delete: new bootstrap.Modal(document.getElementById("modalConfirmarDelete")),
   },
+};
+
+let _idParaDeletar = null;
+
+// Helper: aguarda o modal fechar completamente antes de executar o callback.
+// Evita o backdrop ficar preso quando o DOM é re-renderizado
+// durante a animação de fechamento do Bootstrap (300ms).
+function aoFecharModal(modalEl, callback) {
+  modalEl.addEventListener("hidden.bs.modal", async () => {
+    document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+
+    document.body.classList.remove("modal-open");
+    document.body.style.removeProperty("overflow");
+    document.body.style.removeProperty("padding-right");
+
+    await callback();
+  }, { once: true })
 };
 
 // --- 2. Utilitários ---
 const Utils = {
-  formatarMoeda: (valor) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(valor);
-  },
+  formatarMoeda: (valor) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor),
 
   calcularROI: (spend, revenue) => {
     if (!spend || spend === 0) return 0;
     return (((revenue - spend) / spend) * 100).toFixed(0);
   },
+
+  setLoading: (btn, loading) => {
+    if (loading) {
+      btn.disabled = true;
+      btn.dataset.textoOriginal = btn.innerText;
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>Salvando...`;
+    } else {
+      btn.disabled = false;
+      btn.innerText = btn.dataset.textoOriginal || btn.innerText;
+    }
+  },
 };
 
 // --- 3. UI Controller ---
 const UI = {
-  limparTabela: () => {
-    DOM.tabelaCorpo.innerHTML = "";
+  mostrarSkeleton: () => {
+    DOM.tabelaCorpo.innerHTML = Array(6).fill(`
+      <tr class="skeleton-row">
+        <td><div class="skeleton-cell w-25"></div></td>
+        <td><div class="skeleton-cell w-80"></div></td>
+        <td><div class="skeleton-cell w-60"></div></td>
+        <td><div class="skeleton-cell w-pill"></div></td>
+        <td><div class="skeleton-cell w-actions"></div></td>
+      </tr>
+    `).join("");
   },
+
+  limparTabela: () => { DOM.tabelaCorpo.innerHTML = ""; },
 
   criarLinhaHTML: (campanha) => {
     const statsSafe = campanha.stats || { roi: 0 };
     const roi = statsSafe.roi;
-
-    // ROI pill com classe semântica (estilo vem do style.css)
     const roiClass = roi > 0 ? "positive" : roi < 0 ? "negative" : "zero";
     const roiSinal = roi > 0 ? "↑" : roi < 0 ? "↓" : "—";
 
@@ -81,24 +117,18 @@ const UI = {
         </td>
         <td class="text-end">
           <button class="btn-action btn-add-log"
-            data-id="${campanha.id}" title="Adicionar Log">
-            📝
-          </button>
+            data-id="${campanha.id}" title="Adicionar Log">📝</button>
           <button class="btn-action btn-view-stats"
-            data-id="${campanha.id}" title="Ver Estatísticas">
-            📊
-          </button>
+            data-id="${campanha.id}" title="Ver Estatísticas">📊</button>
           <button class="btn-action btn-edit"
             data-id="${campanha.id}"
             data-nome="${campanha.name}"
             data-produto="${campanha.product}"
-            title="Editar Campanha">
-            ✏️
-          </button>
+            title="Editar Campanha">✏️</button>
           <button class="btn-action btn-del btn-delete"
-            data-id="${campanha.id}" title="Excluir Campanha">
-            🗑️
-          </button>
+            data-id="${campanha.id}"
+            data-nome="${campanha.name}"
+            title="Excluir Campanha">🗑️</button>
         </td>
       </tr>
     `;
@@ -113,12 +143,14 @@ const UI = {
       return;
     }
 
-    DOM.tabelaCorpo.innerHTML = campanhas
-      .map((c) => UI.criarLinhaHTML(c))
-      .join("");
+    DOM.tabelaCorpo.innerHTML = campanhas.map((c) => UI.criarLinhaHTML(c)).join("");
+    DOM.tabelaCorpo.querySelectorAll("[title]").forEach((t) => new bootstrap.Tooltip(t));
+  },
 
-    const tooltipTriggerList = DOM.tabelaCorpo.querySelectorAll("[title]");
-    [...tooltipTriggerList].map((t) => new bootstrap.Tooltip(t));
+  prepararModalDelete: (id, nome) => {
+    _idParaDeletar = id;
+    DOM.delete.nomeCampanha.innerText = nome;
+    DOM.modals.delete.show();
   },
 
   prepararModalLog: (idCampanha) => {
@@ -128,7 +160,6 @@ const UI = {
     DOM.modals.log.show();
   },
 
-  // Pré-preenche o modal de edição com os dados atuais da campanha
   prepararModalEdicao: (id, nome, produto) => {
     DOM.inputs.editId.value = id;
     DOM.inputs.editNome.value = nome;
@@ -167,15 +198,14 @@ const UI = {
     DOM.stats.totalRevenue.innerText = Utils.formatarMoeda(totalRevenue);
     DOM.stats.roi.innerText = `${roi}%`;
 
-    const linhasHTML = [...logs]
+    DOM.stats.tabelaLogs.innerHTML = [...logs]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .map((log) => {
         const lucro = log.revenue - log.spend;
         const corLucro = lucro >= 0 ? "text-success" : "text-danger";
-        const dataFormatada = new Date(log.date).toLocaleDateString("pt-BR");
         return `
           <tr>
-            <td>${dataFormatada}</td>
+            <td>${new Date(log.date).toLocaleDateString("pt-BR")}</td>
             <td class="text-end text-danger">- ${Utils.formatarMoeda(log.spend)}</td>
             <td class="text-end text-success">+ ${Utils.formatarMoeda(log.revenue)}</td>
             <td class="text-end ${corLucro} fw-bold">${Utils.formatarMoeda(lucro)}</td>
@@ -184,7 +214,6 @@ const UI = {
       })
       .join("");
 
-    DOM.stats.tabelaLogs.innerHTML = linhasHTML;
     DOM.modals.stats.show();
   },
 };
@@ -197,6 +226,8 @@ const App = {
   },
 
   carregarTodasCampanhas: async () => {
+    UI.mostrarSkeleton();
+
     try {
       const campanhasBase = await api.getCampaigns();
 
@@ -210,14 +241,11 @@ const App = {
         })
       );
 
-      const campanhasOrdenadas = [...campanhasComStats].sort(
-        (a, b) => b.id - a.id
-      );
-
+      const campanhasOrdenadas = [...campanhasComStats].sort((a, b) => b.id - a.id);
       UI.renderizarDados(campanhasOrdenadas);
-      console.log("Lista de campanhas carregada.");
     } catch (error) {
       console.error("Erro ao carregar campanhas:", error);
+      Toast.error("Não foi possível carregar as campanhas.");
       DOM.tabelaCorpo.innerHTML =
         '<tr><td colspan="5" class="text-center py-4" style="color:var(--red)">Erro ao carregar dados da API.</td></tr>';
     }
@@ -228,55 +256,79 @@ const App = {
     const produto = DOM.inputs.campanhaProduto.value.trim();
 
     if (!nome || !produto) {
-      alert("Preencha todos os campos!");
+      Toast.warning("Preencha todos os campos.");
       return;
     }
+
+    const btn = DOM.buttons.salvarCampanha;
+    Utils.setLoading(btn, true);
 
     try {
       await api.createCampaign({ name: nome, product: produto });
       UI.limparFormularioCampanha();
+
+      aoFecharModal(document.getElementById("modalNovaCampanha"), async () => {
+        Toast.success("Campanha criada com sucesso!");
+        await App.carregarTodasCampanhas();
+      });
+
       DOM.modals.novaCampanha.hide();
-      await App.carregarTodasCampanhas();
     } catch (error) {
-      alert(error.message);
+      Toast.error(error.message);
+    } finally {
+      Utils.setLoading(btn, false);
     }
   },
 
-  // NOVO: lê os inputs do modal de edição e chama o PUT
   editarCampanha: async () => {
     const id = DOM.inputs.editId.value;
     const nome = DOM.inputs.editNome.value.trim();
     const produto = DOM.inputs.editProduto.value.trim();
 
     if (!nome || !produto) {
-      alert("Preencha todos os campos!");
+      Toast.warning("Preencha todos os campos.");
       return;
     }
+
+    const btn = DOM.buttons.salvarEdicao;
+    Utils.setLoading(btn, true);
 
     try {
       await api.updateCampaign(id, { name: nome, product: produto });
+
+      aoFecharModal(document.getElementById("modalEditarCampanha"), async () => {
+        Toast.success("Campanha atualizada!");
+        await App.carregarTodasCampanhas();
+      });
+
       DOM.modals.editar.hide();
-      await App.carregarTodasCampanhas();
     } catch (error) {
-      console.error(error);
-      alert("Erro ao atualizar campanha.");
+      Toast.error(error.message);
+    } finally {
+      Utils.setLoading(btn, false);
     }
   },
 
-  deletarCampanha: async (id) => {
-    if (
-      !confirm(
-        `Tem certeza que deseja excluir a campanha #${id}? Essa ação não pode ser desfeita.`
-      )
-    )
-      return;
+  confirmarDelete: async () => {
+    if (!_idParaDeletar) return;
+
+    const btn = DOM.buttons.confirmarDelete;
+    Utils.setLoading(btn, true);
 
     try {
-      await api.deleteCampaign(id);
-      await App.carregarTodasCampanhas();
+      await api.deleteCampaign(_idParaDeletar);
+
+      aoFecharModal(document.getElementById("modalConfirmarDelete"), async () => {
+        Toast.success("Campanha excluída com sucesso.");
+        await App.carregarTodasCampanhas();
+      });
+
+      DOM.modals.delete.hide();
     } catch (error) {
-      console.error(error);
-      alert("Erro ao excluir campanha.");
+      Toast.error(error.message);
+    } finally {
+      Utils.setLoading(btn, false);
+      _idParaDeletar = null;
     }
   },
 
@@ -287,9 +339,12 @@ const App = {
     const revenue = DOM.inputs.logRevenue.value;
 
     if (!data || !spend || !revenue) {
-      alert("Preencha a data e os valores!");
+      Toast.warning("Preencha a data e os valores.");
       return;
     }
+
+    const btn = DOM.buttons.salvarLog;
+    Utils.setLoading(btn, true);
 
     try {
       await api.addLog(parseInt(id), {
@@ -297,13 +352,18 @@ const App = {
         spend: parseFloat(spend),
         revenue: parseFloat(revenue),
       });
-      alert("Log salvo com sucesso!");
+
+      aoFecharModal(document.getElementById("modalLogCampanha"), async () => {
+        Toast.success("Log salvo com sucesso!");
+        await App.carregarTodasCampanhas();
+      });
+
       DOM.modals.log.hide();
       UI.limparFormularioLog();
-      await App.carregarTodasCampanhas();
     } catch (error) {
-      console.error(error);
-      alert("Erro ao salvar log.");
+      Toast.error(error.message);
+    } finally {
+      Utils.setLoading(btn, false);
     }
   },
 
@@ -313,12 +373,16 @@ const App = {
       UI.preencherModalStats(logs);
     } catch (error) {
       console.error(error);
-      alert("Erro ao buscar histórico da campanha.");
+      Toast.error("Erro ao buscar histórico da campanha.");
     }
   },
 
   setupEventListeners: () => {
-    // Event delegation — um único listener para todos os botões da tabela
+    // Botão "Nova Campanha" controlado 100% pelo JS — sem data-bs-toggle no HTML
+      DOM.btnAbrirNovaCampanha.addEventListener("click", () => {
+      DOM.modals.novaCampanha.show();
+    });
+
     DOM.tabelaCorpo.addEventListener("click", (e) => {
       const btnLog = e.target.closest(".btn-add-log");
       if (btnLog) return UI.prepararModalLog(btnLog.dataset.id);
@@ -326,23 +390,24 @@ const App = {
       const btnStats = e.target.closest(".btn-view-stats");
       if (btnStats) return App.verEstatisticas(btnStats.dataset.id);
 
-      // NOVO: captura dados via data-attributes para evitar re-fetch
       const btnEdit = e.target.closest(".btn-edit");
-      if (btnEdit) {
-        return UI.prepararModalEdicao(
-          btnEdit.dataset.id,
-          btnEdit.dataset.nome,
-          btnEdit.dataset.produto
-        );
-      }
+      if (btnEdit) return UI.prepararModalEdicao(
+        btnEdit.dataset.id,
+        btnEdit.dataset.nome,
+        btnEdit.dataset.produto
+      );
 
       const btnDelete = e.target.closest(".btn-delete");
-      if (btnDelete) return App.deletarCampanha(btnDelete.dataset.id);
+      if (btnDelete) return UI.prepararModalDelete(
+        btnDelete.dataset.id,
+        btnDelete.dataset.nome
+      );
     });
 
     DOM.buttons.salvarCampanha.addEventListener("click", App.criarCampanha);
     DOM.buttons.salvarLog.addEventListener("click", App.adicionarLog);
     DOM.buttons.salvarEdicao.addEventListener("click", App.editarCampanha);
+    DOM.buttons.confirmarDelete.addEventListener("click", App.confirmarDelete);
   },
 };
 

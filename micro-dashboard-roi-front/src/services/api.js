@@ -6,8 +6,42 @@ const API_CONFIG = {
   },
 };
 
+/*
+* Extrai a mensagem de erro do ErrorResponseDto do backend.
+* Se vier erros de validação, concatena tudo.
+* Fallback pro texto genérico se o body não for JSON.
+*/
+async function extrairMensagemErro(response) {
+    const contentType = response.headers.get("content-type") || "";
+
+    if (contentType.includes("application/json")) {
+        try {
+            const body = await response.json();
+
+            // Erros de validação
+            if (body.errors && typeof body.errors === "object") {
+                const msgs = Object.values(body.errors).flat();
+                return msgs.join(" • ");
+            }
+
+            // Erro com título descritivo
+            if (body.title) return body.title;
+
+            // Fallback para qualquer campo de mensagem
+            if (body.detail) return body.detail;
+            if (body.message) return body.message;
+        } catch {
+
+        }
+    }
+
+    // Resposta em texto puro
+    const texto = await response.text().catch(() => "");
+    return text || `Erro ${response.status}`;
+}
+
 /**
- * função genérica e privada para padronizar as chamadas HTTP.
+ * Função genérica e privada para padronizar as chamadas HTTP.
  * centraliza o tratamento de resposta e erros.
  **/
 async function request(endpoint, method = "GET", body = null) {
@@ -24,14 +58,13 @@ async function request(endpoint, method = "GET", body = null) {
         const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, options);
 
         if (!response.ok) {
-            // tenta pegar a mensagem de erro do backend ou usa uma genérica
-            const errorMessage = await response.text();
-            throw new Error(`Erro na API (${response.status}): ${errorMessage || response.status}`);
+            const mensagem = await extrairMensagemErro(response);
+            throw new Error(mensagem);
         }
 
-        // verifica se tem conteúdo para converter em JSON
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.indexOf("application/json") !== -1) {
+        // Verifica se tem conteúdo para converter em JSON
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
             return await response.json();
         }
 
@@ -42,15 +75,14 @@ async function request(endpoint, method = "GET", body = null) {
     }
 }
 
-// objeto exportado com métodos semânticos e limpos
+// Objeto exportado com métodos semânticos e limpos
 export const api = {
-    // --- campanhas ---
     async getCampaigns() {
         return await request('/campaigns');
     },
 
     async createCampaign(campaignData) {
-        return await request('/campaigns', 'POST', campaignData);
+        return await request('/campaigns', "POST", campaignData);
     },
 
     async updateCampaign(campaignId, campaignData) {
@@ -62,7 +94,7 @@ export const api = {
     },
 
     async addLog(campaignId, logData) {
-        return await request(`/campaigns/${campaignId}/logs`, 'POST', logData);
+        return await request(`/campaigns/${campaignId}/logs`, "POST", logData);
     },
 
     async getLogs(campaignId) {
@@ -70,68 +102,6 @@ export const api = {
     },
 
     async deleteCampaign(campaignId) {
-        return await request(`/campaigns/${campaignId}`, 'DELETE');
+        return await request(`/campaigns/${campaignId}`, "DELETE");
     }
 }
-
-// export const api = {
-//   // --- 1. GET ---
-//   // Equivalente ao HttpClient.GetAsync() do C#
-//   async getCampaigns() {
-//     try {
-//       // 'fetch' é a ferramenta nativa para HTTP.
-//       // o 'await' funciona igual ao C#.
-//       const response = await fetch(`${API_BASE_URL}/campaigns`);
-
-//       if (!response.ok) {
-//         throw new Error("Erro ao buscar campanhas");
-//       }
-
-//       // 'repsonse.json()' converte o texto em Objeto JS.
-//       // é como se fosse uma JsonSerializer no C#.
-//       return await response.json();
-//     } catch (error) {
-//       console.error("Erro na API:", error);
-//       return []; // retorna a lista vazia para não quebrar a tela.
-//     }
-//   },
-
-//   // --- 2. POST ---
-//   async createCampaign(campaignData) {
-//     // campaignData é um objeto JS simples: {name: "...", product: "..."}
-
-//     const response = await fetch(`${API_BASE_URL}/campaigns`, {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json", // avisa ao backend que um JSON está sendo enviado.
-//       },
-//       body: JSON.stringify(campaignData), // transforma o objeto em texto para viajar pela rede.
-//     });
-
-//     if (!response.ok) throw new Error("Erro ao criar campanha");
-//     return await response.json();
-//   },
-
-//   // --- 3. GET STATS ---
-//   async getStats(campaignId) {
-//     const response = await fetch(
-//       `${API_BASE_URL}/campaigns/${campaignId}/stats`
-//     );
-//     if (!response.ok) return null;
-//     return await response.json();
-//   },
-
-//   // --- 4. POST LOG ---
-//   async addLog(campaignId, logData) {
-//     const response = await fetch(
-//       `${API_BASE_URL}/campaigns/${campaignId}/logs`,
-//       {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(logData),
-//       }
-//     );
-//     if (!response.ok) throw new Error("Erro ao lançar dados.");
-//     return await response.json();
-//   },
-// };

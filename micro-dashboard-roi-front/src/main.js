@@ -2,6 +2,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import * as bootstrap from "bootstrap";
 import "./assets/style.css";
 import { api } from "./services/api.js";
+import { Toast } from "./services/toast.js";
 
 window.bootstrap = bootstrap;
 
@@ -16,7 +17,6 @@ const DOM = {
     logSpend: document.getElementById("logSpend"),
     logRevenue: document.getElementById("logRevenue"),
     spanIdVisual: document.getElementById("spanIdVisual"),
-    // Inputs do modal de edição
     editId: document.getElementById("editCampanhaId"),
     editNome: document.getElementById("editCampanhaNome"),
     editProduto: document.getElementById("editCampanhaProduto"),
@@ -39,34 +39,64 @@ const DOM = {
   },
   modals: {
     log: new bootstrap.Modal(document.getElementById("modalLogCampanha")),
-    novaCampanha: new bootstrap.Modal(
-      document.getElementById("modalNovaCampanha")
-    ),
+    novaCampanha: new bootstrap.Modal(document.getElementById("modalNovaCampanha")),
     stats: new bootstrap.Modal(document.getElementById("modalStats")),
     editar: new bootstrap.Modal(document.getElementById("modalEditarCampanha")),
   },
 };
 
+// Helper: aguarda o modal fechar completamente antes de executar o callback.
+// Evita o backdrop ficar preso quando o DOM é re-renderizado
+// durante a animação de fechamento do Bootstrap
+function aoFecharModal(modalEl, callback) {
+  modalEl.addEventListener("hidden.bs.modal", async () => {
+    document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
+
+    document.body.classList.remove("modal-open");
+    document.body.style.removeProperty("overflow");
+    document.body.style.removeProperty("padding-right");
+
+    await callback();
+  }, { once: true })
+};
+
 // --- 2. Utilitários ---
 const Utils = {
-  formatarMoeda: (valor) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(valor);
-  },
+  formatarMoeda: (valor) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor),
 
   calcularROI: (spend, revenue) => {
     if (!spend || spend === 0) return 0;
     return (((revenue - spend) / spend) * 100).toFixed(0);
   },
+
+  setLoading: (btn, loading, textoOriginal) => {
+    if (loading) {
+      btn.disabled = true;
+      btn.dataset.textoOriginal = btn.innerText;
+      btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>${textoOriginal ?? "Aguarde..."}`;
+    } else {
+      btn.disabled = false;
+      btn.innerText = btn.dataset.textoOriginal || btn.innerText;
+    }
+  },
 };
 
 // --- 3. UI Controller ---
 const UI = {
-  limparTabela: () => {
-    DOM.tabelaCorpo.innerHTML = "";
+  mostrarSkeleton: () => {
+    DOM.tabelaCorpo.innerHTML = Array(5).fill(`
+      <tr class="skeleton-row">
+        <td><div class="skeleton-cell w-25"></div></td>
+        <td><div class="skeleton-cell w-80"></div></td>
+        <td><div class="skeleton-cell w-60"></div></td>
+        <td><div class="skeleton-cell w-pill"></div></td>
+        <td><div class="skeleton-cell w-actions"></div></td>
+      </tr>
+    `).join("");
   },
+
+  limparTabela: () => { DOM.tabelaCorpo.innerHTML = ""; },
 
   atualizarCards: (totalSpend, totalRevenue) => {
     const roiGeral = Utils.calcularROI(totalSpend, totalRevenue);
@@ -78,7 +108,6 @@ const UI = {
   criarLinhaHTML: (campanha) => {
     const { id, name, product, stats } = campanha;
     const roi = stats?.roi ?? 0;
-
     const roiClass = roi > 0 ? "positive" : roi < 0 ? "negative" : "zero";
     const roiSinal = roi > 0 ? "↑" : roi < 0 ? "↓" : "—";
 
@@ -91,21 +120,9 @@ const UI = {
           <span class="roi-pill ${roiClass}">${roiSinal} ${roi}%</span>
         </td>
         <td class="text-end">
-          <button class="btn-action btn-add-log"
-            data-id="${id}" title="Adicionar Log">
-            📝
-          </button>
-          <button class="btn-action btn-view-stats"
-            data-id="${id}" title="Ver Estatísticas">
-            📊
-          </button>
-          <button class="btn-action btn-edit"
-            data-id="${id}"
-            data-nome="${name}"
-            data-produto="${product}"
-            title="Editar Campanha">
-            ✏️
-          </button>
+          <button class="btn-action btn-add-log" data-id="${id}" title="Adicionar Log">📝</button>
+          <button class="btn-action btn-view-stats" data-id="${id}" title="Ver Estatísticas">📊</button>
+          <button class="btn-action btn-edit" data-id="${id}" data-nome="${name}" data-produto="${product}" title="Editar Campanha">✏️</button>
         </td>
       </tr>
     `;
@@ -115,9 +132,7 @@ const UI = {
     UI.limparTabela();
     const linhasHTML = campanhas.map((c) => UI.criarLinhaHTML(c)).join("");
     DOM.tabelaCorpo.innerHTML = linhasHTML;
-
-    const tooltipTriggerList = DOM.tabelaCorpo.querySelectorAll("[title]");
-    [...tooltipTriggerList].map((t) => new bootstrap.Tooltip(t));
+    DOM.tabelaCorpo.querySelectorAll("[title]").forEach((t) => new bootstrap.Tooltip(t));
   },
 
   prepararModalLog: (idCampanha) => {
@@ -127,7 +142,6 @@ const UI = {
     DOM.modals.log.show();
   },
 
-  // NOVO: pré-preenche o modal de edição
   prepararModalEdicao: (id, nome, produto) => {
     DOM.inputs.editId.value = id;
     DOM.inputs.editNome.value = nome;
@@ -166,15 +180,14 @@ const UI = {
     DOM.stats.totalRevenue.innerText = Utils.formatarMoeda(totalRevenue);
     DOM.stats.roi.innerText = `${roi}%`;
 
-    const linhasHTML = [...logs]
+    DOM.stats.tabelaLogs.innerHTML = [...logs]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .map((log) => {
         const lucro = log.revenue - log.spend;
         const corLucro = lucro >= 0 ? "text-success" : "text-danger";
-        const dataFormatada = new Date(log.date).toLocaleDateString("pt-BR");
         return `
           <tr>
-            <td>${dataFormatada}</td>
+            <td>${new Date(log.date).toLocaleDateString("pt-BR")}</td>
             <td class="text-end text-danger">- ${Utils.formatarMoeda(log.spend)}</td>
             <td class="text-end text-success">+ ${Utils.formatarMoeda(log.revenue)}</td>
             <td class="text-end ${corLucro} fw-bold">${Utils.formatarMoeda(lucro)}</td>
@@ -183,7 +196,6 @@ const UI = {
       })
       .join("");
 
-    DOM.stats.tabelaLogs.innerHTML = linhasHTML;
     DOM.modals.stats.show();
   },
 };
@@ -193,51 +205,33 @@ const App = {
   init: () => {
     App.setupEventListeners();
     App.carregarDados();
-    App.initGlobalTooltips();
-  },
-
-  initGlobalTooltips: () => {
-    const popoverTriggerList = document.querySelectorAll(
-      '[data-bs-toggle="popover"]'
-    );
-    [...popoverTriggerList].map((el) => new bootstrap.Popover(el));
   },
 
   carregarDados: async () => {
+    UI.mostrarSkeleton();
+
     try {
       const campanhaBase = await api.getCampaigns();
 
       const campanhaComStats = await Promise.all(
         campanhaBase.map(async (campanha) => {
-          const stats = (await api.getStats(campanha.id)) || {
-            spend: 0,
-            revenue: 0,
-            roi: 0,
-          };
+          const stats = (await api.getStats(campanha.id)) || { spend: 0, revenue: 0, roi: 0 };
           return { ...campanha, stats };
         })
       );
 
-      const totalGasto = campanhaComStats.reduce(
-        (acc, c) => acc + (c.stats.totalSpend || 0),
-        0
-      );
-      const totalFaturamento = campanhaComStats.reduce(
-        (acc, c) => acc + (c.stats.totalRevenue || 0),
-        0
-      );
+      const totalGasto = campanhaComStats.reduce((acc, c) => acc + (c.stats.totalSpend || 0), 0);
+      const totalFaturamento = campanhaComStats.reduce((acc, c) => acc + (c.stats.totalRevenue || 0), 0);
 
-      const recentes = [...campanhaComStats]
-        .sort((a, b) => b.id - a.id)
-        .slice(0, 5);
+      const recentes = [...campanhaComStats].sort((a, b) => b.id - a.id).slice(0, 5);
 
       UI.renderizarDados(recentes);
       UI.atualizarCards(totalGasto, totalFaturamento);
-
-      console.log("Dashboard atualizado.");
     } catch (error) {
       console.error("Erro no fluxo do dashboard:", error);
-      alert("Não foi possível carregar os dados.");
+      Toast.error("Não foi possível carregar os dados.");
+      DOM.tabelaCorpo.innerHTML =
+        '<tr><td colspan="5" class="text-center py-4" style="color:var(--red)">Erro ao carregar dados da API.</td></tr>';
     }
   },
 
@@ -246,38 +240,56 @@ const App = {
     const produto = DOM.inputs.campanhaProduto.value.trim();
 
     if (!nome || !produto) {
-      alert("Preencha todos os campos!");
+      Toast.warning("Preencha todos os campos.");
       return;
     }
+
+    const btn = DOM.buttons.salvarCampanha;
+    Utils.setLoading(btn, true, "Salvando...");
 
     try {
       await api.createCampaign({ name: nome, product: produto });
       UI.limparFormularioCampanha();
+
+      aoFecharModal(document.getElementById("modalNovaCampanha"), async () => {
+        Toast.success("Campanha criada com sucesso!");
+        await App.carregarDados();
+      });
+
       DOM.modals.novaCampanha.hide();
-      await App.carregarDados();
     } catch (error) {
-      alert(error.message);
+      Toast.error(error.message);
+    } finally {
+      Utils.setLoading(btn, false);
     }
   },
 
-  // NOVO: salva a edição via PUT
   editarCampanha: async () => {
     const id = DOM.inputs.editId.value;
     const nome = DOM.inputs.editNome.value.trim();
     const produto = DOM.inputs.editProduto.value.trim();
 
     if (!nome || !produto) {
-      alert("Preencha todos os campos!");
+      Toast.warning("Preencha todos os campos.");
       return;
     }
 
+    const btn = DOM.buttons.salvarEdicao;
+    Utils.setLoading(btn, true, "Salvando...");
+
     try {
       await api.updateCampaign(id, { name: nome, product: produto });
+
+      aoFecharModal(document.getElementById("modalEditarCampanha"), async () => {
+        Toast.success("Campanha atualizada!");
+        await App.carregarDados();
+      });
+
       DOM.modals.editar.hide();
-      await App.carregarDados();
     } catch (error) {
-      console.error(error);
-      alert("Erro ao atualizar campanha.");
+      Toast.error(error.message);
+    } finally {
+      Utils.setLoading(btn, false);
     }
   },
 
@@ -288,9 +300,12 @@ const App = {
     const revenue = DOM.inputs.logRevenue.value;
 
     if (!data || !spend || !revenue) {
-      alert("Preencha a data e os valores!");
+      Toast.warning("Preencha a data e os valores.");
       return;
     }
+
+    const btn = DOM.buttons.salvarLog;
+    Utils.setLoading(btn, true, "Salvando...");
 
     try {
       await api.addLog(parseInt(id), {
@@ -298,13 +313,18 @@ const App = {
         spend: parseFloat(spend),
         revenue: parseFloat(revenue),
       });
-      alert("Log salvo com sucesso!");
+
+      aoFecharModal(document.getElementById("modalLogCampanha"), async () => {
+        Toast.success("Log salvo com sucesso!");
+        await App.carregarDados();
+      });
+
       DOM.modals.log.hide();
       UI.limparFormularioLog();
-      await App.carregarDados();
     } catch (error) {
-      console.error(error);
-      alert("Erro ao salvar log.");
+      Toast.error(error.message);
+    } finally {
+      Utils.setLoading(btn, false);
     }
   },
 
@@ -314,7 +334,7 @@ const App = {
       UI.preencherModalStats(logs);
     } catch (error) {
       console.error(error);
-      alert("Erro ao buscar detalhes da campanha.");
+      Toast.error("Erro ao buscar detalhes da campanha.");
     }
   },
 
@@ -326,15 +346,12 @@ const App = {
       const btnStats = e.target.closest(".btn-view-stats");
       if (btnStats) return App.verEstatisticas(btnStats.dataset.id);
 
-      // NOVO: captura dados via data-attributes, sem re-fetch
       const btnEdit = e.target.closest(".btn-edit");
-      if (btnEdit) {
-        return UI.prepararModalEdicao(
-          btnEdit.dataset.id,
-          btnEdit.dataset.nome,
-          btnEdit.dataset.produto
-        );
-      }
+      if (btnEdit) return UI.prepararModalEdicao(
+        btnEdit.dataset.id,
+        btnEdit.dataset.nome,
+        btnEdit.dataset.produto
+      );
     });
 
     DOM.buttons.salvarCampanha.addEventListener("click", App.criarCampanha);

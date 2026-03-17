@@ -89,8 +89,7 @@
               <div
                 class="d-flex justify-content-between align-items-center mt-4 mb-3">
                 <h3 class="h4">Todas as Campanhas</h3>
-                <button class="btn btn-primary" data-bs-toggle="modal"
-                  data-bs-target="#modalNovaCampanha">
+                <button class="btn btn-primary" id="btnAbrirNovaCampanha">
                   + Nova Campanha
                 </button>
               </div>
@@ -313,6 +312,58 @@
               data-bs-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-primary"
               id="btnSalvarEdicao">Salvar Alterações</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="modalConfirmarDelete" tabindex="-1"
+      aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content bg-dark text-white border-secondary">
+
+          <div class="modal-header border-secondary">
+            <h5 class="modal-title">Excluir Campanha</h5>
+            <button type="button" class="btn-close btn-close-white"
+              data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <div class="modal-body" style="padding: 20px 24px;">
+            <p
+              style="font-size:0.875rem; color: var(--text-2); margin-bottom: 6px;">
+              Tem certeza que deseja excluir a campanha:
+            </p>
+            <p
+              style="font-size:0.9rem; font-weight:600; color:var(--text-1); margin-bottom: 0;">
+              "<span id="deleteNomeCampanha"></span>"
+            </p>
+            <p
+              style="font-size:0.78rem; color: var(--text-3); margin-top: 10px; margin-bottom:0">
+              Todos os logs associados serão removidos. Essa ação não pode ser
+              desfeita.
+            </p>
+          </div>
+
+          <div class="modal-footer border-secondary">
+            <button type="button" class="btn btn-outline-light"
+              data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" id="btnConfirmarDelete"
+              style="
+            background: var(--red-dim);
+            border: 1px solid rgba(248,113,113,0.3);
+            color: var(--red);
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+          "
+              onmouseover="this.style.background='rgba(248,113,113,0.2)'"
+              onmouseout="this.style.background='var(--red-dim)'">
+              Excluir
+            </button>
           </div>
 
         </div>
