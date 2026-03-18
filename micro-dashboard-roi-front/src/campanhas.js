@@ -3,6 +3,7 @@ import * as bootstrap from "bootstrap";
 import "./assets/style.css";
 import { api } from "./services/api.js";
 import { Toast } from "./services/toast.js";
+import { RoiChart } from "./services/chart.js"; // [NOVO]
 
 window.bootstrap = bootstrap;
 
@@ -36,6 +37,7 @@ const DOM = {
     totalRevenue: document.getElementById("statsTotalRevenue"),
     roi: document.getElementById("statsRoi"),
     tabelaLogs: document.getElementById("tabela-logs-detalhes"),
+    canvas: document.getElementById("roiChart"), // [NOVO]
   },
   modals: {
     log: new bootstrap.Modal(document.getElementById("modalLogCampanha")),
@@ -54,14 +56,12 @@ let _idParaDeletar = null;
 function aoFecharModal(modalEl, callback) {
   modalEl.addEventListener("hidden.bs.modal", async () => {
     document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
-
     document.body.classList.remove("modal-open");
     document.body.style.removeProperty("overflow");
     document.body.style.removeProperty("padding-right");
-
     await callback();
-  }, { once: true })
-};
+  }, { once: true });
+}
 
 // --- 2. Utilitários ---
 const Utils = {
@@ -96,7 +96,7 @@ const UI = {
         <td><div class="skeleton-cell w-pill"></div></td>
         <td><div class="skeleton-cell w-actions"></div></td>
       </tr>
-    `).join("");
+    `).join("")
   },
 
   limparTabela: () => { DOM.tabelaCorpo.innerHTML = ""; },
@@ -180,28 +180,32 @@ const UI = {
   preencherModalStats: (logs) => {
     DOM.stats.tabelaLogs.innerHTML = "";
 
+    // Sem logs: zera métricas, garante que não há gráfico residual e abre modal
     if (!logs || !Array.isArray(logs) || logs.length === 0) {
       DOM.stats.tabelaLogs.innerHTML =
         "<tr><td colspan='4' class='text-center py-3' style='color:var(--text-3)'>Nenhum registro encontrado.</td></tr>";
       DOM.stats.totalSpend.innerText = Utils.formatarMoeda(0);
       DOM.stats.totalRevenue.innerText = Utils.formatarMoeda(0);
       DOM.stats.roi.innerText = "0%";
+      RoiChart.destruir(); // [NOVO] garante canvas limpo
       DOM.modals.stats.show();
       return;
     }
 
-    const totalSpend = logs.reduce((acc, l) => acc + l.spend, 0);
+    // Calcula totais e atualiza cards de resumo
+    const totalSpend   = logs.reduce((acc, l) => acc + l.spend, 0);
     const totalRevenue = logs.reduce((acc, l) => acc + l.revenue, 0);
-    const roi = Utils.calcularROI(totalSpend, totalRevenue);
+    const roi          = Utils.calcularROI(totalSpend, totalRevenue);
 
-    DOM.stats.totalSpend.innerText = Utils.formatarMoeda(totalSpend);
+    DOM.stats.totalSpend.innerText   = Utils.formatarMoeda(totalSpend);
     DOM.stats.totalRevenue.innerText = Utils.formatarMoeda(totalRevenue);
-    DOM.stats.roi.innerText = `${roi}%`;
+    DOM.stats.roi.innerText          = `${roi}%`;
 
+    // Renderiza tabela de histórico (mais recente primeiro)
     DOM.stats.tabelaLogs.innerHTML = [...logs]
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .map((log) => {
-        const lucro = log.revenue - log.spend;
+        const lucro    = log.revenue - log.spend;
         const corLucro = lucro >= 0 ? "text-success" : "text-danger";
         return `
           <tr>
@@ -213,6 +217,23 @@ const UI = {
         `;
       })
       .join("");
+
+    // [NOVO] O gráfico precisa que o canvas tenha dimensões reais.
+    // shown.bs.modal dispara após a animação de abertura — canvas visível e dimensionado.
+    const modalStatsEl = document.getElementById("modalStats");
+
+    modalStatsEl.addEventListener(
+      "shown.bs.modal",
+      () => RoiChart.renderizar(DOM.stats.canvas, logs),
+      { once: true }
+    );
+
+    // [NOVO] Libera memória do canvas ao fechar o modal
+    modalStatsEl.addEventListener(
+      "hidden.bs.modal",
+      () => RoiChart.destruir(),
+      { once: true }
+    );
 
     DOM.modals.stats.show();
   },
@@ -252,7 +273,7 @@ const App = {
   },
 
   criarCampanha: async () => {
-    const nome = DOM.inputs.campanhaNome.value.trim();
+    const nome    = DOM.inputs.campanhaNome.value.trim();
     const produto = DOM.inputs.campanhaProduto.value.trim();
 
     if (!nome || !produto) {
@@ -281,8 +302,8 @@ const App = {
   },
 
   editarCampanha: async () => {
-    const id = DOM.inputs.editId.value;
-    const nome = DOM.inputs.editNome.value.trim();
+    const id      = DOM.inputs.editId.value;
+    const nome    = DOM.inputs.editNome.value.trim();
     const produto = DOM.inputs.editProduto.value.trim();
 
     if (!nome || !produto) {
@@ -333,9 +354,9 @@ const App = {
   },
 
   adicionarLog: async () => {
-    const id = DOM.inputs.idCampanhaLog.value;
-    const data = DOM.inputs.logData.value;
-    const spend = DOM.inputs.logSpend.value;
+    const id      = DOM.inputs.idCampanhaLog.value;
+    const data    = DOM.inputs.logData.value;
+    const spend   = DOM.inputs.logSpend.value;
     const revenue = DOM.inputs.logRevenue.value;
 
     if (!data || !spend || !revenue) {
@@ -378,8 +399,7 @@ const App = {
   },
 
   setupEventListeners: () => {
-    // Botão "Nova Campanha" controlado 100% pelo JS — sem data-bs-toggle no HTML
-      DOM.btnAbrirNovaCampanha.addEventListener("click", () => {
+    DOM.btnAbrirNovaCampanha.addEventListener("click", () => {
       DOM.modals.novaCampanha.show();
     });
 
