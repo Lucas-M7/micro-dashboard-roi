@@ -10,7 +10,7 @@ public interface ICampaignService
     Task<CampaignDto?> GetCampaignById(int id);
     Task<List<Campaign>> GetAllCampaigns();
     Task<bool> DeleteCampaignById(int id);
-    Task<CreateDailyLogDTO?> AddLogToCampaign(int campaignId, DailyLog dailyLog);
-    Task<List<DailyLogDTO>?> GetLogsByCampaign(int campaignId);
+    Task<CreateDailyLogDto?> AddLogToCampaign(int campaignId, DailyLog dailyLog);
+    Task<List<DailyLogDto>?> GetLogsByCampaign(int campaignId);
     Task<CampaignStatsDto?> GetCampaignStats(int campaignId);
 }

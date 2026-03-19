@@ -1,9 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using micro_dashboard_roi.Models;
 
 namespace micro_dashboard_roi.DTOs;
 
-public class DailyLogDTO
+public class CreateDailyLogDto
 {
     public int Id { get; init; }
 
@@ -17,6 +16,4 @@ public class DailyLogDTO
     [Required(ErrorMessage = "O valor de faturamento é obrigatório.")]
     [Range(0, double.MaxValue, ErrorMessage = "O faturamento não pode ser negativo.")]
     public decimal Revenue { get; set; }
-
-    public int CampaignId { get; set; }
 }

@@ -2,7 +2,6 @@ using micro_dashboard_roi.Data;
 using micro_dashboard_roi.DTOs;
 using micro_dashboard_roi.Models;
 using micro_dashboard_roi.Services.Interfaces;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
 namespace micro_dashboard_roi.Services;
@@ -16,7 +15,7 @@ public class CampaignService : ICampaignService
         _context = context;
     }
 
-    public async Task<CreateDailyLogDTO?> AddLogToCampaign(int campaignId, DailyLog dailyLog)
+    public async Task<CreateDailyLogDto?> AddLogToCampaign(int campaignId, DailyLog dailyLog)
     {
         var exists = await _context.Campaigns.AnyAsync(c => c.Id == campaignId);
         if (!exists) return null;
@@ -26,7 +25,7 @@ public class CampaignService : ICampaignService
         _context.DailyLogs.Add(dailyLog);
         await _context.SaveChangesAsync();
 
-        return new CreateDailyLogDTO
+        return new CreateDailyLogDto
         {
             Id = dailyLog.Id,
             Date = dailyLog.Date,
@@ -112,7 +111,7 @@ public class CampaignService : ICampaignService
         };
     }
 
-    public async Task<List<DailyLogDTO>?> GetLogsByCampaign(int campaignId)
+    public async Task<List<DailyLogDto>?> GetLogsByCampaign(int campaignId)
     {
         var exists = await _context.Campaigns.AnyAsync(c => c.Id == campaignId);
         if (!exists) return null;
@@ -121,7 +120,7 @@ public class CampaignService : ICampaignService
             .AsNoTracking()
             .Where(l => l.CampaignId == campaignId)
             .OrderByDescending(l => l.Date)
-            .Select(log => new DailyLogDTO
+            .Select(log => new DailyLogDto
             {
                 Id = log.Id,
                 Date = log.Date,
@@ -129,21 +128,6 @@ public class CampaignService : ICampaignService
                 Revenue = log.Revenue,
                 CampaignId = log.CampaignId
             }).ToListAsync();
-
-        // var logsFromDb = await _context.DailyLogs
-        //                                 .Where(l => l.CampaignId == campaignId)
-        //                                 .ToListAsync();
-
-        // var logsDto = logsFromDb.Select(log => new DailyLogDTO
-        // {
-        //     Id = log.Id,
-        //     Date = log.Date,
-        //     Spend = log.Spend,
-        //     Revenue = log.Revenue,
-        //     CampaignId = log.CampaignId
-        // }).ToList();
-
-        // return logsDto;
     }
 
     public async Task<bool> DeleteCampaignById(int id)
