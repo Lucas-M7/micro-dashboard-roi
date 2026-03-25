@@ -11,8 +11,8 @@
  *
  * Uso:
  *   import { RoiChart } from './chart.js';
- *   RoiChart.renderizar(canvasEl, logs); // modal deve estar visível
- *   RoiChart.destruir();                 // chamar ao fechar o modal
+ *   RoiChart.render(canvasEl, logs); // modal deve estar visível
+ *   RoiChart.destroy();              // chamar ao fechar o modal
  */
 
 import {
@@ -40,7 +40,7 @@ Chart.register(
 );
 
 // ─── Tokens de design — espelham as CSS vars do style.css ────────────────────
-const COR = {
+const COLORS = {
   ice:           "#8ecfdf",
   iceGlow:       "rgba(142, 207, 223, 0.15)",
   iceTransp:     "rgba(142, 207, 223, 0)",
@@ -53,7 +53,7 @@ const COR = {
 };
 
 // Singleton — garante apenas uma instância ativa por vez
-let _instancia = null;
+let _instance = null;
 
 // ─── Transformação de dados ──────────────────────────────────────────────────
 
@@ -62,27 +62,27 @@ let _instancia = null;
  * Ordena por data ASC e calcula o ROI acumulado entrada a entrada.
  *
  * @param {Array} logs - DailyLogDTO[]
- * @returns {{ labels, roiAcumulado, gastos, receitas }}
+ * @returns {{ labels, accumulatedRoi, expenses, revenues }}
  */
-function prepararDatasets(logs) {
-  const ordenados = [...logs].sort(
+function buildDatasets(logs) {
+  const sorted = [...logs].sort(
     (a, b) => new Date(a.date) - new Date(b.date)
   );
 
-  let spendAcc   = 0;
-  let revenueAcc = 0;
+  let accSpend   = 0;
+  let accRevenue = 0;
 
-  const labels       = [];
-  const roiAcumulado = [];
-  const gastos       = [];
-  const receitas     = [];
+  const labels         = [];
+  const accumulatedRoi = [];
+  const expenses       = [];
+  const revenues       = [];
 
-  for (const log of ordenados) {
-    spendAcc   += log.spend;
-    revenueAcc += log.revenue;
+  for (const log of sorted) {
+    accSpend   += log.spend;
+    accRevenue += log.revenue;
 
-    const roi = spendAcc > 0
-      ? Number((((revenueAcc - spendAcc) / spendAcc) * 100).toFixed(1))
+    const roi = accSpend > 0
+      ? Number((((accRevenue - accSpend) / accSpend) * 100).toFixed(1))
       : 0;
 
     labels.push(
@@ -91,17 +91,17 @@ function prepararDatasets(logs) {
         month: "2-digit",
       })
     );
-    roiAcumulado.push(roi);
-    gastos.push(Number(log.spend.toFixed(2)));
-    receitas.push(Number(log.revenue.toFixed(2)));
+    accumulatedRoi.push(roi);
+    expenses.push(Number(log.spend.toFixed(2)));
+    revenues.push(Number(log.revenue.toFixed(2)));
   }
 
-  return { labels, roiAcumulado, gastos, receitas };
+  return { labels, accumulatedRoi, expenses, revenues };
 }
 
 // ─── Configuração do Chart.js ────────────────────────────────────────────────
 
-function buildConfig(labels, datasets, pluginGradiente) {
+function buildConfig(labels, datasets, gradientPlugin) {
   return {
     type: "line",
     data: { labels, datasets },
@@ -114,7 +114,7 @@ function buildConfig(labels, datasets, pluginGradiente) {
           position: "top",
           align: "end",
           labels: {
-            color: COR.textMuted,
+            color: COLORS.textMuted,
             font: { family: "'DM Sans', sans-serif", size: 11 },
             boxWidth: 10,
             boxHeight: 10,
@@ -125,8 +125,8 @@ function buildConfig(labels, datasets, pluginGradiente) {
           },
         },
         tooltip: {
-          backgroundColor: COR.tooltipBg,
-          borderColor: COR.tooltipBorder,
+          backgroundColor: COLORS.tooltipBg,
+          borderColor: COLORS.tooltipBorder,
           borderWidth: 1,
           titleColor: "#e8eaf0",
           bodyColor: "#8b90a0",
@@ -151,9 +151,9 @@ function buildConfig(labels, datasets, pluginGradiente) {
       },
       scales: {
         x: {
-          grid: { color: COR.grid, drawBorder: false },
+          grid: { color: COLORS.grid, drawBorder: false },
           ticks: {
-            color: COR.textMuted,
+            color: COLORS.textMuted,
             font: { family: "'DM Sans', sans-serif", size: 10 },
             maxRotation: 0,
           },
@@ -162,20 +162,20 @@ function buildConfig(labels, datasets, pluginGradiente) {
         yRoi: {
           type: "linear",
           position: "left",
-          grid: { color: COR.grid, drawBorder: false },
+          grid: { color: COLORS.grid, drawBorder: false },
           ticks: {
-            color: COR.ice,
+            color: COLORS.ice,
             font: { family: "'DM Mono', monospace", size: 10 },
             callback: (v) => `${v}%`,
           },
         },
         // Eixo direito — valores monetários (sem grid duplicado)
-        yValor: {
+        yValue: {
           type: "linear",
           position: "right",
           grid: { drawOnChartArea: false },
           ticks: {
-            color: COR.textMuted,
+            color: COLORS.textMuted,
             font: { family: "'DM Mono', monospace", size: 10 },
             callback: (v) =>
               new Intl.NumberFormat("pt-BR", {
@@ -189,7 +189,7 @@ function buildConfig(labels, datasets, pluginGradiente) {
     },
     // Plugin passado aqui no nível do config da instância,
     // não via Chart.register — escopo isolado a este gráfico
-    plugins: [pluginGradiente],
+    plugins: [gradientPlugin],
   };
 }
 
@@ -205,51 +205,51 @@ export const RoiChart = {
    * @param {HTMLCanvasElement} canvas
    * @param {Array} logs - DailyLogDTO[]
    */
-  renderizar(canvas, logs) {
-    this.destruir();
+  render(canvas, logs) {
+    this.destroy();
 
-    const { labels, roiAcumulado, gastos, receitas } = prepararDatasets(logs);
+    const { labels, accumulatedRoi, expenses, revenues } = buildDatasets(logs);
     const ctx = canvas.getContext("2d");
 
     const datasets = [
       {
         label: "ROI Acumulado",
-        data: roiAcumulado,
+        data: accumulatedRoi,
         yAxisID: "yRoi",
-        borderColor: COR.ice,
-        backgroundColor: COR.iceTransp, // substituído pelo plugin abaixo
+        borderColor: COLORS.ice,
+        backgroundColor: COLORS.iceTransp, // substituído pelo plugin abaixo
         borderWidth: 2,
         pointRadius: 3,
         pointHoverRadius: 5,
-        pointBackgroundColor: COR.ice,
+        pointBackgroundColor: COLORS.ice,
         tension: 0.35,
         fill: true,
         order: 1,
       },
       {
         label: "Gasto",
-        data: gastos,
-        yAxisID: "yValor",
-        borderColor: COR.red,
+        data: expenses,
+        yAxisID: "yValue",
+        borderColor: COLORS.red,
         backgroundColor: "transparent",
         borderWidth: 1.5,
         pointRadius: 2,
         pointHoverRadius: 4,
-        pointBackgroundColor: COR.red,
+        pointBackgroundColor: COLORS.red,
         tension: 0.35,
         borderDash: [4, 4],
         order: 2,
       },
       {
         label: "Receita",
-        data: receitas,
-        yAxisID: "yValor",
-        borderColor: COR.green,
+        data: revenues,
+        yAxisID: "yValue",
+        borderColor: COLORS.green,
         backgroundColor: "transparent",
         borderWidth: 1.5,
         pointRadius: 2,
         pointHoverRadius: 4,
-        pointBackgroundColor: COR.green,
+        pointBackgroundColor: COLORS.green,
         tension: 0.35,
         borderDash: [4, 4],
         order: 3,
@@ -258,36 +258,36 @@ export const RoiChart = {
 
     // Plugin de gradiente com flag interna — compatível com todas as versões
     // do Chart.js (evita tentar escrever em config.plugins que é readonly)
-    let gradienteAplicado = false;
-    const pluginGradiente = {
-      id: "gradienteRoi",
+    let gradientApplied = false;
+    const gradientPlugin = {
+      id: "roiGradient",
       beforeDraw(chart) {
-        if (gradienteAplicado || !chart.chartArea) return;
+        if (gradientApplied || !chart.chartArea) return;
 
         const gradient = ctx.createLinearGradient(
           0, chart.chartArea.top,
           0, chart.chartArea.bottom
         );
-        gradient.addColorStop(0, COR.iceGlow);
-        gradient.addColorStop(1, COR.iceTransp);
+        gradient.addColorStop(0, COLORS.iceGlow);
+        gradient.addColorStop(1, COLORS.iceTransp);
 
         chart.data.datasets[0].backgroundColor = gradient;
-        gradienteAplicado = true;
+        gradientApplied = true;
         chart.update("none"); // re-render sem animação para aplicar o gradiente
       },
     };
 
-    _instancia = new Chart(ctx, buildConfig(labels, datasets, pluginGradiente));
+    _instance = new Chart(ctx, buildConfig(labels, datasets, gradientPlugin));
   },
 
   /**
    * Destrói a instância ativa e libera a memória do canvas.
    * Deve ser chamado no evento hidden.bs.modal do modal de stats.
    */
-  destruir() {
-    if (_instancia) {
-      _instancia.destroy();
-      _instancia = null;
+  destroy() {
+    if (_instance) {
+      _instance.destroy();
+      _instance = null;
     }
   },
 };

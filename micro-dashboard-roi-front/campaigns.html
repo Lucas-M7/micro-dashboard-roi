@@ -57,8 +57,7 @@
             height="32"
             class="rounded-circle me-2" />
           <div>
-            <div
-              style="font-size:0.875rem;font-weight:600;color:#e8eaf0">Admin</div>
+            <div style="font-size:0.875rem;font-weight:600;color:#e8eaf0">Admin</div>
             <div style="font-size:0.72rem;color:#555c72">Administrador</div>
           </div>
         </div>
@@ -86,10 +85,10 @@
 
           <section class="row" aria-label="Lista Completa de Campanhas">
             <div class="col-12">
-              <div
-                class="d-flex justify-content-between align-items-center mt-4 mb-3">
+              <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
                 <h3 class="h4">Todas as Campanhas</h3>
-                <button class="btn btn-primary" id="btnAbrirNovaCampanha">
+                <!-- Controlado 100% pelo JS — sem data-bs-toggle para evitar conflito de backdrop -->
+                <button class="btn btn-primary" id="btnOpenNewCampaign">
                   + Nova Campanha
                 </button>
               </div>
@@ -99,23 +98,16 @@
                 <table class="table table-dark table-hover align-middle mb-0">
                   <thead>
                     <tr>
-                      <th scope="col"
-                        class="text-secondary text-uppercase fs-7">ID</th>
-                      <th scope="col"
-                        class="text-secondary text-uppercase fs-7">Nome</th>
-                      <th scope="col"
-                        class="text-secondary text-uppercase fs-7">Produto</th>
-                      <th scope="col"
-                        class="text-secondary text-uppercase fs-7 text-end">ROI
-                        Global</th>
-                      <th scope="col"
-                        class="text-secondary text-uppercase fs-7 text-end">Ações</th>
+                      <th scope="col" class="text-secondary text-uppercase fs-7">ID</th>
+                      <th scope="col" class="text-secondary text-uppercase fs-7">Nome</th>
+                      <th scope="col" class="text-secondary text-uppercase fs-7">Produto</th>
+                      <th scope="col" class="text-secondary text-uppercase fs-7 text-end">ROI Global</th>
+                      <th scope="col" class="text-secondary text-uppercase fs-7 text-end">Ações</th>
                     </tr>
                   </thead>
-                  <tbody id="tabela-corpo">
+                  <tbody id="table-body">
                     <tr>
-                      <td colspan="5" class="text-center"
-                        style="color:#555c72;padding:32px">
+                      <td colspan="5" class="text-center" style="color:#555c72;padding:32px">
                         Carregando campanhas...
                       </td>
                     </tr>
@@ -130,8 +122,7 @@
     </div>
 
     <!-- Modal: Nova Campanha -->
-    <div class="modal fade" id="modalNovaCampanha" tabindex="-1"
-      aria-hidden="true">
+    <div class="modal fade" id="modalNewCampaign" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark text-white border-secondary">
           <div class="modal-header border-secondary">
@@ -140,21 +131,18 @@
               data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <form id="formNovaCampanha">
+            <form id="formNewCampaign">
               <div class="mb-3">
-                <label for="campanhaNome" class="form-label">Nome da
-                  Campanha</label>
+                <label for="inputCampaignName" class="form-label">Nome da Campanha</label>
                 <input type="text"
                   class="form-control bg-dark text-white border-secondary"
-                  id="campanhaNome" placeholder="Ex: Black Friday - Facebook"
-                  required>
+                  id="inputCampaignName" placeholder="Ex: Black Friday - Facebook" required>
               </div>
               <div class="mb-3">
-                <label for="campanhaProduto" class="form-label">Produto /
-                  Oferta</label>
+                <label for="inputCampaignProduct" class="form-label">Produto / Oferta</label>
                 <input type="text"
                   class="form-control bg-dark text-white border-secondary"
-                  id="campanhaProduto" placeholder="Ex: Secaps Black" required>
+                  id="inputCampaignProduct" placeholder="Ex: Secaps Black" required>
               </div>
             </form>
           </div>
@@ -162,15 +150,14 @@
             <button type="button" class="btn btn-outline-light"
               data-bs-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-primary"
-              id="btnSalvarCampanha">Salvar Campanha</button>
+              id="btnSaveCampaign">Salvar Campanha</button>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Modal: Log de Campanha -->
-    <div class="modal fade" id="modalLogCampanha" tabindex="-1"
-      aria-hidden="true">
+    <div class="modal fade" id="modalAddLog" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark text-white border-secondary">
           <div class="modal-header border-secondary">
@@ -179,31 +166,28 @@
               data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <input type="hidden" id="idCampanhaLog">
+            <input type="hidden" id="inputLogCampaignId">
             <p class="text-secondary" style="font-size:0.82rem">Lançando dados
-              para: <strong
-                id="spanIdVisual" class="text-white">...</strong></p>
-            <form id="formNovoLog">
+              para: <strong id="labelLogCampaign" class="text-white">...</strong></p>
+            <form id="formAddLog">
               <div class="mb-3">
-                <label for="logData" class="form-label">Data do Registro</label>
+                <label for="inputLogDate" class="form-label">Data do Registro</label>
                 <input type="date"
                   class="form-control bg-dark text-white border-secondary"
-                  id="logData" required>
+                  id="inputLogDate" required>
               </div>
               <div class="row">
                 <div class="col-6 mb-3">
-                  <label for="logSpend" class="form-label"
-                    style="color:#f87171">Gasto (R$)</label>
+                  <label for="inputLogSpend" class="form-label" style="color:#f87171">Gasto (R$)</label>
                   <input type="number" step="0.01"
                     class="form-control bg-dark text-white border-secondary"
-                    id="logSpend" placeholder="0.00" required>
+                    id="inputLogSpend" placeholder="0.00" required>
                 </div>
                 <div class="col-6 mb-3">
-                  <label for="logRevenue" class="form-label"
-                    style="color:#4ade80">Faturamento (R$)</label>
+                  <label for="inputLogRevenue" class="form-label" style="color:#4ade80">Faturamento (R$)</label>
                   <input type="number" step="0.01"
                     class="form-control bg-dark text-white border-secondary"
-                    id="logRevenue" placeholder="0.00" required>
+                    id="inputLogRevenue" placeholder="0.00" required>
                 </div>
               </div>
             </form>
@@ -212,7 +196,7 @@
             <button type="button" class="btn btn-outline-light"
               data-bs-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-primary"
-              id="btnSalvarLog">Salvar Log</button>
+              id="btnSaveLog">Salvar Log</button>
           </div>
         </div>
       </div>
@@ -222,13 +206,11 @@
     <div class="modal fade" id="modalStats" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content bg-dark text-white border-secondary">
-
           <div class="modal-header border-secondary">
             <h5 class="modal-title">Detalhes da Campanha</h5>
             <button type="button" class="btn-close btn-close-white"
               data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-
           <div class="modal-body">
 
             <!-- Cards de resumo -->
@@ -251,8 +233,7 @@
             <h6 class="text-white border-bottom border-secondary pb-2 mb-3">
               Evolução do ROI
             </h6>
-            <div
-              style="position: relative; height: 220px; margin-bottom: 28px;">
+            <div style="position: relative; height: 220px; margin-bottom: 28px;">
               <canvas id="roiChart"></canvas>
             </div>
 
@@ -260,8 +241,7 @@
             <h6 class="text-white border-bottom border-secondary pb-2 mb-3">
               Histórico de Logs
             </h6>
-            <div class="table-responsive"
-              style="max-height: 200px; overflow-y: auto;">
+            <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
               <table class="table table-dark table-sm table-hover">
                 <thead>
                   <tr>
@@ -271,125 +251,101 @@
                     <th class="text-secondary text-end">Lucro/Preju</th>
                   </tr>
                 </thead>
-                <tbody id="tabela-logs-detalhes"></tbody>
+                <tbody id="statsLogsTableBody"></tbody>
               </table>
             </div>
 
           </div>
-
           <div class="modal-footer border-secondary">
             <button type="button" class="btn btn-secondary"
               data-bs-dismiss="modal">Fechar</button>
           </div>
-
         </div>
       </div>
     </div>
 
-    <div class="modal fade" id="modalEditarCampanha" tabindex="-1"
-      aria-hidden="true">
+    <!-- Modal: Editar Campanha -->
+    <div class="modal fade" id="modalEditCampaign" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-dark text-white border-secondary">
-
           <div class="modal-header border-secondary">
             <h5 class="modal-title">Editar Campanha</h5>
             <button type="button" class="btn-close btn-close-white"
               data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-
           <div class="modal-body">
             <!-- ID oculto para saber qual campanha está sendo editada -->
-            <input type="hidden" id="editCampanhaId" />
-
-            <form id="formEditarCampanha">
+            <input type="hidden" id="inputEditId" />
+            <form id="formEditCampaign">
               <div class="mb-3">
-                <label for="editCampanhaNome" class="form-label">Nome da
-                  Campanha</label>
-                <input
-                  type="text"
+                <label for="inputEditName" class="form-label">Nome da Campanha</label>
+                <input type="text"
                   class="form-control bg-dark text-white border-secondary"
-                  id="editCampanhaNome"
-                  placeholder="Ex: Black Friday - Facebook"
-                  required />
+                  id="inputEditName" placeholder="Ex: Black Friday - Facebook" required />
               </div>
               <div class="mb-3">
-                <label for="editCampanhaProduto" class="form-label">Produto /
-                  Oferta</label>
-                <input
-                  type="text"
+                <label for="inputEditProduct" class="form-label">Produto / Oferta</label>
+                <input type="text"
                   class="form-control bg-dark text-white border-secondary"
-                  id="editCampanhaProduto"
-                  placeholder="Ex: Oferta Validada"
-                  required />
+                  id="inputEditProduct" placeholder="Ex: Oferta Validada" required />
               </div>
             </form>
           </div>
-
           <div class="modal-footer border-secondary">
             <button type="button" class="btn btn-outline-light"
               data-bs-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-primary"
-              id="btnSalvarEdicao">Salvar Alterações</button>
+              id="btnSaveEdit">Salvar Alterações</button>
           </div>
-
         </div>
       </div>
     </div>
 
-    <div class="modal fade" id="modalConfirmarDelete" tabindex="-1"
-      aria-hidden="true">
+    <!-- Modal: Confirmar Exclusão -->
+    <div class="modal fade" id="modalConfirmDelete" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content bg-dark text-white border-secondary">
-
           <div class="modal-header border-secondary">
             <h5 class="modal-title">Excluir Campanha</h5>
             <button type="button" class="btn-close btn-close-white"
               data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-
           <div class="modal-body" style="padding: 20px 24px;">
-            <p
-              style="font-size:0.875rem; color: var(--text-2); margin-bottom: 6px;">
+            <p style="font-size:0.875rem; color: var(--text-2); margin-bottom: 6px;">
               Tem certeza que deseja excluir a campanha:
             </p>
-            <p
-              style="font-size:0.9rem; font-weight:600; color:var(--text-1); margin-bottom: 0;">
-              "<span id="deleteNomeCampanha"></span>"
+            <p style="font-size:0.9rem; font-weight:600; color:var(--text-1); margin-bottom: 0;">
+              "<span id="labelDeleteCampaignName"></span>"
             </p>
-            <p
-              style="font-size:0.78rem; color: var(--text-3); margin-top: 10px; margin-bottom:0">
-              Todos os logs associados serão removidos. Essa ação não pode ser
-              desfeita.
+            <p style="font-size:0.78rem; color: var(--text-3); margin-top: 10px; margin-bottom:0">
+              Todos os logs associados serão removidos. Essa ação não pode ser desfeita.
             </p>
           </div>
-
           <div class="modal-footer border-secondary">
             <button type="button" class="btn btn-outline-light"
               data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" id="btnConfirmarDelete"
+            <button type="button" id="btnConfirmDelete"
               style="
-            background: var(--red-dim);
-            border: 1px solid rgba(248,113,113,0.3);
-            color: var(--red);
-            font-size: 0.82rem;
-            font-weight: 600;
-            padding: 8px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-          "
+                background: var(--red-dim);
+                border: 1px solid rgba(248,113,113,0.3);
+                color: var(--red);
+                font-size: 0.82rem;
+                font-weight: 600;
+                padding: 8px 18px;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.15s ease;
+              "
               onmouseover="this.style.background='rgba(248,113,113,0.2)'"
               onmouseout="this.style.background='var(--red-dim)'">
               Excluir
             </button>
           </div>
-
         </div>
       </div>
     </div>
 
-    <script
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="./src/campanhas.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="./src/campaigns.js"></script>
   </body>
 </html>
